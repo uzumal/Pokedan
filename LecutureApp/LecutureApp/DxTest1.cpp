@@ -1,5 +1,7 @@
 #include "DxLib.h"
 #include "pokemon.h"
+#include "thread"
+#include "mutex"
 
 #define DOWN	0
 #define UP		1
@@ -19,6 +21,8 @@ bool damage = false;
 
 int enemyDirection = 0;
 
+bool messageflag = false;
+
 /*ジャンプ用変数*/
 int temp = 0;
 int y_temp = 0;
@@ -28,11 +32,61 @@ int y_prev = 0;
 bool onGround = false;		//ジャンプする瞬間
 bool jump = false;			//ジャンプしているかどうか	
 
+/*コンソール表示用変数*/
+char message1[1024];
+char message2[1024];
+char message3[1024];
+
 /*ポケモン構造体*/
 pokemon poke;
 pokemon dark;
 pokemon* c = &poke;
 pokemon* d = &dark;
+
+
+void initConsole() {
+
+	/*メッセージボックス*/
+	int messageBox = LoadGraph("画像/messageBox.png");
+
+	if (messageflag) {
+		DrawRotaGraph(SCREEN_WIDTH / 2, 300, 1, 0, messageBox, true);
+	}
+}
+
+
+void setMessage(char s[]) {
+
+	char temp[1024];
+	/*初期化*/
+	for (int i = 0; i < 1024; i++)temp[i] = '\0';
+
+	/*文字列コピー*/
+	for (int i = 0; s[i] != '\0'; i++) { temp[i] = s[i]; }
+
+	if (message1[0] == '\0')for (int i = 0; temp[i] != '\0'; i++) { message1[i] = temp[i]; }
+	else if (message2[0] == '\0')for (int i = 0; temp[i] != '\0'; i++) { message2[i] = temp[i]; }
+	else if (message3[0] == '\0')for (int i = 0; temp[i] != '\0'; i++) { message3[i] = temp[i]; }
+	else {
+		for (int i = 0; i < 1024; i++) { message1[i] = '\0'; }
+		for (int i = 0; i < 1024; i++) { message1[i] = message2[i]; }
+
+		for (int i = 0; i < 1024; i++)message2[i] = '\0';
+		for (int i = 0; i < 1024; i++) { message2[i] = message3[i]; }
+
+		for (int i = 0; i < 1024; i++) { message3[i] = temp[i]; }
+	}
+}
+
+
+void outMessage() {
+
+	initConsole();
+	/*コンソール表示*/
+	DrawFormatString(160, 287, GetColor(255, 255, 255), "%s", message1);
+	DrawFormatString(160, 317, GetColor(255, 255, 255), "%s", message2);
+	DrawFormatString(160, 347, GetColor(255, 255, 255), "%s", message3);
+}
 
 /*ジャンプ処理*/
 void moveJump() {
@@ -84,21 +138,35 @@ bool isNearEnemy(pokemon* pika,pokemon* dark) {
 
 /*仮の敵の動き*/
 void enemyMove() {
-	if (c->x-48 < d->x) {
-		d->x -= CHIP_SIZE;
-		enemyDirection = LEFT;
+
+	char s[1024];
+
+	if (!isNearEnemy(c, d)) {
+		if (c->x - 48 < d->x) {
+			d->x -= CHIP_SIZE;
+			enemyDirection = LEFT;
+		}
+		if (c->x + 48 > d->x) {
+			d->x += CHIP_SIZE;
+			enemyDirection = RIGHT;
+		}
+		if (c->y - 48 < d->y) {
+			d->y -= CHIP_SIZE;
+			enemyDirection = UP;
+		}
+		if (c->y + 48 > d->y) {
+			d->y += CHIP_SIZE;
+			enemyDirection = DOWN;
+		}
 	}
-	if (c->x+48 > d->x) {
-		d->x += CHIP_SIZE;
-		enemyDirection = RIGHT;
-	}
-	if (c->y-48 < d->y) {
-		d->y -= CHIP_SIZE;
-		enemyDirection = UP;
-	}
-	if (c->y+48 > d->y) {
-		d->y += CHIP_SIZE;
-		enemyDirection = DOWN;
+	else {
+		if (c->hp > 0 && d->hp>0) {
+			c->hp -= 1;
+			sprintf_s(s, "%sの攻撃!%sに%dのダメージ!%sのHP:%d", d->name, c->name, 1,c->name,c->hp);
+			messageflag = true;
+			setMessage(s);
+			outMessage();
+		}
 	}
 }
 
@@ -118,6 +186,7 @@ int getCountFrame() {
 	return 0;
 }
 
+
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	/*ウインドウの大きさ指定*/
@@ -126,8 +195,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	SetBackgroundColor(100, 100, 100);
 	/*ウィンドウモードに指定*/
 	ChangeWindowMode(TRUE);
-	if (DxLib_Init() != 0) { return -1; }					// DXライブラリ初期化処理
-	SetDrawScreen(DX_SCREEN_BACK);  //描画先を裏画面に設定
+	if (DxLib_Init() != 0) { return -1; }	// DXライブラリ初期化処理
+	SetDrawScreen(DX_SCREEN_BACK);			//描画先を裏画面に設定
 	
 	/*後々自分の名前を入力させる*/
 	c->name = "ピカチュウ";
@@ -152,6 +221,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	d->moveTexture[RIGHT][0] = LoadGraph("画像/ダークライr_1.png");
 	d->moveTexture[RIGHT][1] = LoadGraph("画像/ダークライr_2.png");
 	
+	/*白色の透過*/
+	SetTransColor(255, 255, 255);
+
 	/*ジャンプの速度変化に使用*/
 	int f = 0;
 
@@ -165,15 +237,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int direction = DOWN;
 	int d_num = 0;
 
+	int localeTemp = 0;
+
 	/*フラグ*/
 	bool endflag = false;		//qを押すと終わり
+
 	int tempTime = 0;
-	int stringTime = 0;
 	int currentTime = 0;
 	SetWaitVSyncFlag(FALSE);
 
+	char s[1024];
+
 	currentTime = GetNowCount();
 
+	/*描画する*/
 	// while(裏画面を表画面に反映, メッセージ処理, 画面クリア,フレームカウント)
 	while (ScreenFlip() == 0 && ProcessMessage() == 0 && ClearDrawScreen() == 0 && getCountFrame() == 0) {
 
@@ -187,34 +264,52 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		currentTime = GetNowCount();
 
-		/*DrawRotaGraph(x座標,y座標,縮尺度,角度,描画する画像ハンドル,背景透過処理のON,OFF)*/
-		/*座標は画像の真ん中に持つ*/
-
+		/*階層、level、HP表示(固定)*/
 		DrawFormatString(0, 0, GetColor(255, 255, 255), "B1F");
 		DrawFormatString(50, 0, GetColor(255, 255, 255), "Lv: %d",c->level);
 		DrawFormatString(120, 0, GetColor(255, 255, 255), "HP: %d/ %d",c->hp,c->maxHp);
 		
-		DrawRotaGraph(c->x, c->y, 1.5, 0, c->moveTexture[direction][d_num], true);
-		if (d->hp > 0) { DrawRotaGraph(d->x, d->y, 1.5, 0, d->moveTexture[enemyDirection][d_num], true); }
-		if (d->hp==0 && d->isLive) { stringTime = GetNowCount(); d->isLive = false; }
-		if (!(d->isLive) && GetNowCount() - stringTime < 2000) { DrawFormatString(0, 0, GetColor(255, 255, 255), "%sは倒れた!", d->name);}
 
-		/*30フレームごとに画像更新->歩いているように見える*/
+		/*DrawRotaGraph(x座標,y座標,縮尺度,角度,描画する画像ハンドル,背景透過処理のON,OFF)*/
+		/*座標は画像の真ん中に持つ*/
+		DrawRotaGraph(c->x, c->y, 1.5, 0, c->moveTexture[direction][d_num], true);
+
+		outMessage();
+
+		/*生きてたら敵表示*/
+		if (d->hp > 0) { DrawRotaGraph(d->x, d->y, 1.5, 0, d->moveTexture[enemyDirection][d_num], true); }
+		
+		/*死亡確認*/
+		if (d->hp == 0 && d->isLive) { sprintf_s(s, 1024, "%sは倒れた!", d->name); messageflag = true; setMessage(s); outMessage(); d->isLive = false; }
+
 		/*qキーで終わり*/
 		if (keyState[KEY_INPUT_Q] != 0) { endflag = true; }
+		
 
-		/*ダメージを加える*/
-		if (c->hp > 0 && isNearEnemy(c, d) && !damage) { c->hp -= 1; damage = true; }
+
+		/*Attack*/
+		if (!jump && keyState[KEY_INPUT_Z] == 1) {
+			if (isNearEnemy(c, d) && d->isLive) {
+				d->hp -= 1;
+				sprintf_s(s, 1024, "%sの攻撃!%sに%dのダメージ!%sのHP:%d", c->name, d->name, 1, d->name, d->hp);
+				messageflag = true;
+				setMessage(s);
+				initConsole();
+				outMessage();
+			}
+			enemyMove();
+		}
 		
 		/*斜め移動も入れるならelse ifじゃなくてifだけにする*/
-		/*ダンジョンの移動ぽくするなら*/
+		/*ダンジョンの移動ぽくするならx+=CHIP_SIZE*/
+		/*ぬるぬる動かすならx++*/
+		/*自分が動けば敵も動く*/
 		/*Right*/
-		if (keyState[KEY_INPUT_D]==1) {
+		else if (keyState[KEY_INPUT_D]==1) {
 			direction = RIGHT;
-			if (c->x < SCREEN_WIDTH-24 && !(d->x == c->x + 48 && d->y == c->y)) {
-				if (keyState[KEY_INPUT_B])c->x += 3;
-				else c->x+=CHIP_SIZE;
-				damage = false;
+			if (c->x < SCREEN_WIDTH-24 && (!(d->x == c->x + 48 && d->y == c->y)||!d->isLive)) {
+				if (keyState[KEY_INPUT_B])c->x += CHIP_SIZE;
+				else c->x += CHIP_SIZE;
 			}
 			enemyMove();
 		}
@@ -222,10 +317,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/*Left*/
 		else if (keyState[KEY_INPUT_A]==1) { 
 			direction = LEFT;
-			if (c->x > 24 && !(d->x == c->x - 48 && d->y == c->y)) {
+			if (c->x > 24 && (!(d->x == c->x - 48 && d->y == c->y)||!d->isLive)) {
 				if (keyState[KEY_INPUT_B])c->x -= 3;
 				else c->x-=CHIP_SIZE;
-				damage = false;
 			}
 			enemyMove();
 		}
@@ -233,10 +327,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/*Up*/
 		else if (!jump && keyState[KEY_INPUT_W]==1) {
 			direction = UP;
-			if (c->y > 24 && !(d->y == c->y -48 && d->x == c->x)) {
+			if (c->y > 24 && (!(d->y == c->y -48 && d->x == c->x)||!d->isLive)) {
 				if (keyState[KEY_INPUT_B])c->y -= 3;
 				else c->y-=CHIP_SIZE;
-				damage = false;
 			}
 			enemyMove();
 		}
@@ -244,31 +337,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/*Down*/
 		else if (!jump && keyState[KEY_INPUT_X]==1) {
 			direction = DOWN;
-			if (c->y < SCREEN_HEIGHT - 24 && !(d->y == c->y + 48 && d->x == c->x)) {
+			if (c->y < SCREEN_HEIGHT - 24 && (!(d->y == c->y + 48 && d->x == c->x)||!d->isLive)) {
 				if (keyState[KEY_INPUT_B])c->y += 3;
 				else c->y+=CHIP_SIZE;
-				damage = false;
 			}
 			enemyMove();
 		}
 
-		/*Attack*/
-		else if (!jump && keyState[KEY_INPUT_Z] == 1) {
-			if(isNearEnemy(c,d) && d->isLive){
-				DrawFormatString(200, 400, GetColor(255, 255, 255), "%sの攻撃! %sに%dのダメージ!",c->name,d->name,1);
-				d->hp -= 1;
-			}
-			damage = false;
-			enemyMove();
-		}
 		/*おまけのジャンプ処理*/
 		if (!jump && keyState[KEY_INPUT_SPACE] == 1) { 
 			y_prev = c->y; temp = c->y;
 			jump = true;  onGround = true;
 		}
 
-		
-		
 		/*ジャンプ処理本体*/
 		if (jump) {
 			moveJump();
