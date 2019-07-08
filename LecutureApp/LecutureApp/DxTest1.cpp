@@ -1,7 +1,5 @@
 #include "DxLib.h"
 #include "pokemon.h"
-#include "thread"
-#include "mutex"
 
 #define DOWN	0
 #define UP		1
@@ -19,7 +17,7 @@ char keyState[256];
 /*ダメージを与えたか与えていないか*/
 bool damage = false;
 
-int enemyDirection = 0;
+int enemyDirection = DOWN;
 
 bool messageflag = false;
 
@@ -141,25 +139,35 @@ void enemyMove() {
 
 	char s[1024];
 
+	/*近くにいるかいないか*/
+	/*攻撃するかしないか*/
 	if (!isNearEnemy(c, d)) {
-		if (c->x - 48 < d->x) {
-			d->x -= CHIP_SIZE;
-			enemyDirection = LEFT;
+		if (c->x != d->x) {
+			if (c->x - 48 < d->x) {
+				d->x -= CHIP_SIZE;
+				enemyDirection = LEFT;
+			}
+			else if (c->x + 48 > d->x) {
+				d->x += CHIP_SIZE;
+				enemyDirection = RIGHT;
+			}
 		}
-		if (c->x + 48 > d->x) {
-			d->x += CHIP_SIZE;
-			enemyDirection = RIGHT;
-		}
-		if (c->y - 48 < d->y) {
-			d->y -= CHIP_SIZE;
-			enemyDirection = UP;
-		}
-		if (c->y + 48 > d->y) {
-			d->y += CHIP_SIZE;
-			enemyDirection = DOWN;
+		if (c->y != d->y) {
+			if (c->y - 48 < d->y) {
+				d->y -= CHIP_SIZE;
+				enemyDirection = UP;
+			}
+			else if (c->y + 48 > d->y) {
+				d->y += CHIP_SIZE;
+				enemyDirection = DOWN;
+			}
 		}
 	}
 	else {
+		if (c->x < d->x)enemyDirection = LEFT;
+		else if (c->x > d->x)enemyDirection = RIGHT;
+		if (c->y < d->y)enemyDirection = UP;
+		else if (c->y > d->y)enemyDirection = DOWN;
 		if (c->hp > 0 && d->hp>0) {
 			c->hp -= 1;
 			sprintf_s(s, "%sの攻撃!%sに%dのダメージ!%sのHP:%d", d->name, c->name, 1,c->name,c->hp);
@@ -265,6 +273,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		currentTime = GetNowCount();
 
 		/*階層、level、HP表示(固定)*/
+		DrawFormatString(300, 0, GetColor(255, 255, 255), "ピカ座標(%d,%d)", c->x, c->y);
+		DrawFormatString(300, 20,GetColor(255, 255, 255), "ダー座標(%d,%d)",d->x,d->y );
 		DrawFormatString(0, 0, GetColor(255, 255, 255), "B1F");
 		DrawFormatString(50, 0, GetColor(255, 255, 255), "Lv: %d",c->level);
 		DrawFormatString(120, 0, GetColor(255, 255, 255), "HP: %d/ %d",c->hp,c->maxHp);
@@ -289,6 +299,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		/*Attack*/
 		if (!jump && keyState[KEY_INPUT_Z] == 1) {
+			if (c->x > d->x)direction = LEFT;
+			else if (c->x < d->x)direction = RIGHT;
+			if (c->y > d->y)direction = UP;
+			else if (c->y < d->y)direction = DOWN;
 			if (isNearEnemy(c, d) && d->isLive) {
 				d->hp -= 1;
 				sprintf_s(s, 1024, "%sの攻撃!%sに%dのダメージ!%sのHP:%d", c->name, d->name, 1, d->name, d->hp);
@@ -310,8 +324,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (c->x < SCREEN_WIDTH-24 && (!(d->x == c->x + 48 && d->y == c->y)||!d->isLive)) {
 				if (keyState[KEY_INPUT_B])c->x += CHIP_SIZE;
 				else c->x += CHIP_SIZE;
+				enemyMove();
 			}
-			enemyMove();
 		}
 
 		/*Left*/
@@ -320,8 +334,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (c->x > 24 && (!(d->x == c->x - 48 && d->y == c->y)||!d->isLive)) {
 				if (keyState[KEY_INPUT_B])c->x -= 3;
 				else c->x-=CHIP_SIZE;
+				enemyMove();
 			}
-			enemyMove();
 		}
 
 		/*Up*/
@@ -330,8 +344,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (c->y > 24 && (!(d->y == c->y -48 && d->x == c->x)||!d->isLive)) {
 				if (keyState[KEY_INPUT_B])c->y -= 3;
 				else c->y-=CHIP_SIZE;
+				enemyMove();
 			}
-			enemyMove();
 		}
 
 		/*Down*/
@@ -340,8 +354,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (c->y < SCREEN_HEIGHT - 24 && (!(d->y == c->y + 48 && d->x == c->x)||!d->isLive)) {
 				if (keyState[KEY_INPUT_B])c->y += 3;
 				else c->y+=CHIP_SIZE;
+				enemyMove();
 			}
-			enemyMove();
 		}
 
 		/*おまけのジャンプ処理*/
