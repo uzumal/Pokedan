@@ -39,6 +39,7 @@ pokemon* d = &dark;
 int slap;
 int bgm;
 int down;
+int messageBox;
 
 void turnToPokemon(pokemon *me,pokemon *enemy ) {
 	if (me->x > enemy->x)me->direction = LEFT;
@@ -49,13 +50,8 @@ void turnToPokemon(pokemon *me,pokemon *enemy ) {
 
 void initConsole() {
 
-	/*白色の透過*/
-	SetTransColor(255, 255, 255);
-
-	/*メッセージボックス*/
-	int messageBox = LoadGraph("画像/messageBox.png");
-
 	/*メッセージフラグが立っていれば、メッセージボックス表示*/
+	/*上書きしていく*/
 	if (messageflag) {
 		DrawRotaGraph(SCREEN_WIDTH / 2, 300, 1, 0, messageBox, true);
 	}
@@ -64,6 +60,8 @@ void initConsole() {
 
 void setMessage(char s[]) {
 
+	messageflag = true;
+	
 	char temp[1024];
 	/*初期化*/
 	for (int i = 0; i < 1024; i++)temp[i] = '\0';
@@ -89,8 +87,6 @@ void setMessage(char s[]) {
 
 
 void outMessage() {
-
-	messageflag = true;
 
 	initConsole();
 	/*コンソール表示*/
@@ -158,7 +154,7 @@ void enemyMove(pokemon* enemy) {
 		/*死亡確認*/
 		if (enemy->hp == 0 && enemy->isLive) { 
 			PlaySoundMem(down, DX_PLAYTYPE_BACK); 
-			sprintf_s(s, 1024, "%sは倒れた!", enemy->name); 
+			sprintf_s(s, 256, "%sは倒れた!", enemy->name); 
 			setMessage(s); 
 			outMessage();
 			enemy->isLive = false; 
@@ -227,7 +223,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	if (DxLib_Init() != 0) { return -1; }	// DXライブラリ初期化処理
 	SetDrawScreen(DX_SCREEN_BACK);			//描画先を裏画面に設定
 	SetUseDirectDrawFlag(FALSE);			//処理を軽くするために使用
-	SetWaitVSyncFlag(FALSE);
+	//SetWaitVSyncFlag(FALSE);
 
 	/*後々自分の名前を入力させる*/
 	c->name = "ピカチュウ";
@@ -252,6 +248,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	d->moveTexture[RIGHT][0] = LoadGraph("画像/ダークライr_1.png");
 	d->moveTexture[RIGHT][1] = LoadGraph("画像/ダークライr_2.png");
 	
+	/*白色の透過*/
+	SetTransColor(255, 255, 255);
+	/*メッセージボックス*/
+	messageBox = LoadGraph("画像/messageBox.png");
 
 	/*座標位置*/
 	c->x = CHIP_SIZE*3;
@@ -311,9 +311,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		if (d->hp > 0) { DrawRotaGraph(d->x, d->y, 1.5, 0, d->moveTexture[d->direction][d_num], true); }
 
 		/*qキーで終わり*/
-		if (keyState[KEY_INPUT_Q] != 0) { endflag = true; }
+		if (keyState[KEY_INPUT_Q] == 1) { endflag = true; }
 		
-
 		/*Attack*/
 		if (!jump && keyState[KEY_INPUT_Z] == 1) {
 			/*敵のいる方向に向きを変える*/
@@ -382,9 +381,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//moveJump();
 		//}
 
-		//if (endflag) {
-			//break;
-		//}
+		if (endflag) {
+			break;
+		}
 	}
 
 	DxLib_End();    // DXライブラリ終了処理
