@@ -4,10 +4,10 @@
 #include <random>
 
 #define SCREEN_WIDTH     (800)                          // 画面の横幅
-#define SCREEN_HEIGHT    (400)                          // 画面の縦幅
+#define SCREEN_HEIGHT    (600)                          // 画面の縦幅
 #define CHIP_SIZE        (40)                           // 一つのチップのサイズ
-#define MAP_HEIGHT		 (240)
-
+#define MAP_HEIGHT		 (400)
+#define MAP_WIDTH		 (720)
 /*ジャンプ用変数*/
 int temp = 0;
 int y_temp = 0;
@@ -29,7 +29,7 @@ char keyState[256];			//押されているキーを格納
 
 /*フラグ*/
 bool endflag = false;		//qを押すと終わり
-
+bool menuflag = false;
 /*ポケモン構造体*/
 pokemon poke;
 pokemon dark;
@@ -41,7 +41,11 @@ int slap;
 int bgm;
 int down;
 
+/*画像ファイルメモリ用配列*/
 int messageBox;
+int skillBox;
+
+int attackNum;
 
 /*プロトタイプ宣言*/
 int init();
@@ -54,7 +58,7 @@ void outMessage();								//メッセージを表示する
 bool isNearPokemon(pokemon*, pokemon*);			//敵が近くにいたら(攻撃圏内にいたら)true
 bool findPokemon(pokemon*, pokemon*);
 void enemyMove(pokemon*);						//敵の動き
-int getRandom();
+int getRandom(int,int);
 
 /*キーが押されているフレーム数によって表示する画像を変更する*/
 /*
@@ -72,7 +76,7 @@ int getCountFrame() {
 	for (int i = 0; i<256; i++) {
 		if (tmpKey[i] != 0) {						// i番のキーコードに対応するキーが押されていたら
 			keyState[i]++;							// 加算
-			if (keyState[i] == 60)keyState[i] = 1;	//移動時の画像処理に使用
+			if (keyState[i] == 60)keyState[i] = 2;	//移動時の画像処理に使用
 		}
 		else {										// 押されていなければ
 			keyState[i] = 0;						// 0にする
@@ -86,15 +90,14 @@ int getCountFrame() {
 /***********************      Mainの処理      *********************************/
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	
+	/*初期化処理*/
 	if (init() == -1) { return -1; }
 
 	int d_num = 0;
 	int tempTime = 0;
-	int currentTime = 0;
 
+	/*白色を格納*/
 	const int white = GetColor(255, 255, 255);
-
-	currentTime = GetNowCount();
 
 	/*bgm再生開始*/
 	PlaySoundMem(bgm, DX_PLAYTYPE_LOOP);
@@ -104,93 +107,93 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	while (ScreenFlip() == 0 && ProcessMessage() == 0 && ClearDrawScreen() == 0 && getCountFrame() == 0) {
 
 		/*500ms(0.5秒)に一度画像更新(歩いているように見える)*/
-		if (currentTime - tempTime> 500) 
+		if (GetNowCount() - tempTime> 500) 
 		{	
 			if (d_num == 1)d_num = 0;
 			else d_num = 1;
 			tempTime = GetNowCount(); 
 		}
 
-		currentTime = GetNowCount();
-
 		/*階層、level、HP表示(固定)*/
-		DrawFormatString(300, 0, white, "ピカ座標(%d,%d)", c->x, c->y);
-		DrawFormatString(300, 20,white, "ダー座標(%d,%d)",d->x,d->y );
 		DrawFormatString(0	, 0, white, "B1F");
 		DrawFormatString(50	, 0, white, "Lv: %d",c->level);
 		DrawFormatString(120, 0, white, "HP: %d/ %d",c->hp,c->maxHp);
-		
+		DrawFormatString(220, 0, white, "セットわざ名 : %s",c->skill[attackNum].name);
+		/*確認用座標(あとで消す)*/
+		DrawFormatString(500, 0, white, "ピカ座標(%d,%d)", c->x, c->y);
+		DrawFormatString(500, 20,white, "ダー座標(%d,%d)",d->x,d->y );
 
 		/*DrawRotaGraph(x座標,y座標,縮尺度,角度,描画する画像ハンドル,背景透過処理のON,OFF)*/
 		/*座標は画像の真ん中に持つ*/
 		DrawRotaGraph(c->x, c->y, 1.5, 0, c->moveTexture[c->direction][d_num], true);
-
-		outMessage();
-
 		/*生きてたら敵表示*/
-		if (d->hp > 0) { DrawRotaGraph(d->x, d->y, 1.5, 0, d->moveTexture[d->direction][d_num], true); }
+		if (d->isLive) { DrawRotaGraph(d->x, d->y, 1.5, 0, d->moveTexture[d->direction][d_num], true); }
+
+		/*メッセージ出力*/
+		outMessage();
 
 		/*qキーで終わり*/
 		if (keyState[KEY_INPUT_Q] == 1) { endflag = true; }
 		
+		/*わざ表を消去*/
+		if (menuflag && keyState[KEY_INPUT_I] == 1) {
+			menuflag = false;
+		}
+
+		/*わざ表を表示*/
+		else if (!menuflag && keyState[KEY_INPUT_I] == 1) {
+			menuflag = true;
+		}
+
 		/*Attack*/
-		if (!jump && keyState[KEY_INPUT_Z] == 1) {
+		if (!jump && !menuflag && keyState[KEY_INPUT_Z] == 1) {
 			/*敵のいる方向に向きを変える*/
 			if (isNearPokemon(c, d) && d->isLive) {
-				turnToPokemon(c, d);
-				for (int i = c->x - 15; i < c->x + 15; i+=8) {
-					for (int j = c->y - 15; j < c->y + 15; j+=8) {
-						DrawFormatString(i, j,GetColor(100,100,100),"");
-					}
-				}
-				attack(c, d, 0);
-				DrawRotaGraph(c->x, c->y, 1.5, 0, c->moveTexture[c->direction][d_num], true);
-				ScreenFlip();
+				attack(c, d, attackNum);
 			}
 			enemyMove(d);
 		}
-		
+
 		/*斜め移動も入れるならelse ifじゃなくてifだけにする*/
-		/*ダンジョンの移動ぽくするならx+=CHIP_SIZE*/
-		/*ぬるぬる動かすならx++*/
 		/*自分が動けば敵も動く*/
 		/*Right*/
-		else if (keyState[KEY_INPUT_D]) {
+		else if (!menuflag && keyState[KEY_INPUT_RIGHT]==1) {
 			c->direction = RIGHT;
-			if (c->x < SCREEN_WIDTH-CHIP_SIZE && (!(d->x == c->x + CHIP_SIZE && d->y == c->y)||!d->isLive)) {
-				if (keyState[KEY_INPUT_D] == 1) { c->x += CHIP_SIZE; enemyMove(d); }
-				else if (keyState[KEY_INPUT_B]) { c->x += CHIP_SIZE; enemyMove(d); }
-				
+			if (!keyState[KEY_INPUT_Y] && c->x < MAP_WIDTH && (!(d->x == c->x + CHIP_SIZE && d->y == c->y)||!d->isLive)) {
+					c->x += CHIP_SIZE;
 			}
 		}
 
 		/*Left*/
-		else if (keyState[KEY_INPUT_A]==1) { 
+		else if (!menuflag && keyState[KEY_INPUT_LEFT]==1) { 
 			c->direction = LEFT;
-			if (c->x > CHIP_SIZE && (!(d->x == c->x - CHIP_SIZE && d->y == c->y)||!d->isLive)) {
+			if (!keyState[KEY_INPUT_Y] &&  c->x > CHIP_SIZE * 2 && (!(d->x == c->x - CHIP_SIZE && d->y == c->y)||!d->isLive)) {
 				c->x-=CHIP_SIZE;
-				enemyMove(d);
 			}
 		}
 
 		/*Up*/
-		else if (!jump && keyState[KEY_INPUT_W]==1) {
+		if (!menuflag && !jump && keyState[KEY_INPUT_UP]==1) {
 			c->direction = UP;
-			if (c->y > CHIP_SIZE && (!(d->y == c->y - CHIP_SIZE && d->x == c->x)||!d->isLive)) {
+			if (!keyState[KEY_INPUT_Y] && c->y > CHIP_SIZE * 2 && (!(d->y == c->y - CHIP_SIZE && d->x == c->x)||!d->isLive)) {
 				c->y-=CHIP_SIZE;
-				enemyMove(d);
 			}
 		}
 
 		/*Down*/
-		else if (!jump && keyState[KEY_INPUT_X]==1) {
+		else if (!menuflag && !jump && keyState[KEY_INPUT_DOWN]==1) {
 			c->direction = DOWN;
-			if (c->y < MAP_HEIGHT && (!(d->y == c->y + CHIP_SIZE && d->x == c->x)||!d->isLive)) {
+			if (!keyState[KEY_INPUT_Y] && c->y < MAP_HEIGHT && (!(d->y == c->y + CHIP_SIZE && d->x == c->x)||!d->isLive)) {
 				c->y+=CHIP_SIZE;
-				enemyMove(d);
 			}
 		}
 
+		if (!menuflag && !keyState[KEY_INPUT_Y]) {
+			if (keyState[KEY_INPUT_RIGHT] == 1 || keyState[KEY_INPUT_LEFT] == 1 || keyState[KEY_INPUT_UP] == 1 || keyState[KEY_INPUT_DOWN] == 1){
+				if(!(c->x == CHIP_SIZE * 2||c->x == MAP_WIDTH||c->y == CHIP_SIZE * 2 || c->y == MAP_HEIGHT) || !isNearPokemon(c,d))
+					enemyMove(d);
+			}
+		}
 		/*おまけのジャンプ処理*/
 		//if (!jump && keyState[KEY_INPUT_SPACE] == 1) { 
 		//	y_prev = c->y; temp = c->y;
@@ -202,12 +205,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//moveJump(c);
 		//}
 
+		if (menuflag) {
+			DrawRotaGraph(550, 160, 1, 0, skillBox, true);
+			DrawFormatString(530, 98,  white, "%s (%d/%d)", c->skill[0].name, c->skill[0].count, c->skill[0].maxCount);
+			DrawFormatString(530, 149, white, "%s (%d/%d)", c->skill[1].name, c->skill[1].count, c->skill[1].maxCount);
+			DrawFormatString(530, 199, white, "%s (%d/%d)", c->skill[2].name, c->skill[2].count, c->skill[2].maxCount);
+			DrawFormatString(530, 250, white, "%s (%d/%d)", c->skill[3].name, c->skill[3].count, c->skill[3].maxCount);
+			if (keyState[KEY_INPUT_1]) { attackNum = 0; menuflag = false; }
+			else if (keyState[KEY_INPUT_2]) { attackNum = 1; menuflag = false;}
+			else if (keyState[KEY_INPUT_3]) { attackNum = 2; menuflag = false;}
+			else if (keyState[KEY_INPUT_4]) { attackNum = 3; menuflag = false;}
+		}
+
 		if (endflag) {
 			break;
 		}
 	}
 
-	DxLib_End();    // DXライブラリ終了処理
+	DxLib::DxLib_End();    // DXライブラリ終了処理
 	
 	return 0;
 }
@@ -224,7 +239,7 @@ int init() {
 	if (DxLib_Init() != 0) { return -1; }	// DXライブラリ初期化処理
 	SetDrawScreen(DX_SCREEN_BACK);			//描画先を裏画面に設定
 	SetUseDirectDrawFlag(FALSE);			//処理を軽くするために使用
-	//SetWaitVSyncFlag(FALSE);
+	SetWaitVSyncFlag(FALSE);
 
 	/*後々自分の名前を入力させる*/
 	c->name = "ピカチュウ";
@@ -240,6 +255,29 @@ int init() {
 	c->moveTexture[RIGHT][0] = LoadGraph("画像/ピカチュウr_1.png");
 	c->moveTexture[RIGHT][1] = LoadGraph("画像/ピカチュウr_2.png");
 
+	c->skill[0].name = "でんこうせっか";
+	c->skill[1].name = "10まんボルト";
+	c->skill[2].name = "かみなり";
+	c->skill[3].name = "ひっかく";
+
+	c->skill[0].value = 2;
+	c->skill[1].value = 7;
+	c->skill[2].value = 10;
+	c->skill[3].value = 3;
+
+	c->skill[0].maxCount = 20;
+	c->skill[1].maxCount = 10;
+	c->skill[2].maxCount = 5;
+	c->skill[3].maxCount = 20;
+
+	c->skill[0].count = c->skill[0].maxCount;
+	c->skill[1].count = c->skill[1].maxCount;
+	c->skill[2].count = c->skill[2].maxCount;
+	c->skill[3].count = c->skill[3].maxCount;
+
+	c->maxHp = 30;
+	c->hp = 30;
+
 	d->moveTexture[DOWN][0] = LoadGraph("画像/ダークライd_1.png");
 	d->moveTexture[DOWN][1] = LoadGraph("画像/ダークライd_2.png");
 	d->moveTexture[UP][0] = LoadGraph("画像/ダークライu_1.png");
@@ -249,11 +287,38 @@ int init() {
 	d->moveTexture[RIGHT][0] = LoadGraph("画像/ダークライr_1.png");
 	d->moveTexture[RIGHT][1] = LoadGraph("画像/ダークライr_2.png");
 
+	d->skill[0].name = "でんこうせっか";
+	d->skill[1].name = "だましうち";
+	d->skill[2].name = "あくのはどう";
+	d->skill[3].name = "れいとうビーム";
+
+	d->skill[0].value = 2;
+	d->skill[1].value = 7;
+	d->skill[2].value = 10;
+	d->skill[3].value = 3;
+
+
+	d->skill[0].maxCount = 20;
+	d->skill[1].maxCount = 10;
+	d->skill[2].maxCount = 20;
+	d->skill[3].maxCount = 10;
+
+	d->skill[0].count = c->skill[0].maxCount;
+	d->skill[1].count = c->skill[1].maxCount;
+	d->skill[2].count = c->skill[2].maxCount;
+	d->skill[3].count = c->skill[3].maxCount;
+
+
+	d->maxHp = 70;
+	d->hp = 70;
+
 	/*白色の透過*/
 	SetTransColor(255, 255, 255);
 	/*メッセージボックス*/
 	messageBox = LoadGraph("画像/messageBox.png");
-
+	SetTransColor(255, 0, 0);
+	/*わざ選択ボックス*/
+	skillBox = LoadGraph("画像/skillBox.png");
 	/*座標位置*/
 	c->x = CHIP_SIZE * 3;
 	c->y = CHIP_SIZE * 3;
@@ -271,17 +336,38 @@ int init() {
 
 /*attack(自分,敵,攻撃の種類)*/
 void attack(pokemon* me, pokemon* enemy, int attackNum) {
-	enemy->hp -= 1;
-	/*マイナスにならないようにする*/
-	if (enemy->hp < 0)enemy->hp = 0;
-	sprintf_s(s, "%sの攻撃!%sに%dのダメージ!%sのHP:%d", me->name, enemy->name, me->attack[attackNum], enemy->name, enemy->hp);
-	messageflag = true;
-	setMessage(s);
-	outMessage();
-	PlaySoundMem(slap, DX_PLAYTYPE_BACK);
+
+	turnToPokemon(me, enemy);//敵の方を向く
+	
+	//ななめに居る時は攻撃しない
+	if (!(((me->x - CHIP_SIZE == enemy->x) && (me->y + CHIP_SIZE == enemy->y || me->y - CHIP_SIZE == enemy->y)) || (me->x + CHIP_SIZE == enemy->x) && (me->y + CHIP_SIZE == enemy->y || me->y - CHIP_SIZE == enemy->y))) {
+		if (me->skill[attackNum].count > 0) {
+
+			/*確率で攻撃が外れる*/
+			if (getRandom(1, 100) < 98) {
+				enemy->hp -= me->skill[attackNum].value;
+				if (enemy->hp < 0)enemy->hp = 0;//hpがマイナスになるのを防ぐ
+				sprintf_s(s, "%sの%s! %sに%dのダメージ!%sのHP:%d", me->name, me->skill[attackNum].name, enemy->name, me->skill[attackNum].value, enemy->name, enemy->hp);
+				PlaySoundMem(slap, DX_PLAYTYPE_BACK);
+			}
+			else {
+				sprintf_s(s, "%sの攻撃は外れた!", me->name);
+			}
+		}
+		else {
+			sprintf_s(s, "%sはもう使えない!",me->skill[attackNum].name);
+		}
+		me->skill[attackNum].count -= 1;
+		if (me->skill[attackNum].count < 0)me->skill[attackNum].count = 0;	//マイナスを防ぐ
+		messageflag = true;
+		setMessage(s);
+		outMessage();
+	}
 }
 
 /*攻撃時に敵の方を向く*/
+/*のちに向かせる前に画像を敷いてダブリを無くす*/
+/*もしくは向いている方向に攻撃させるのでこれは消すかも?*/
 void turnToPokemon(pokemon* me, pokemon* enemy) {
 	if (me->x > enemy->x)me->direction = LEFT;
 	else if (me->x < enemy->x)me->direction = RIGHT;
@@ -295,7 +381,7 @@ void initConsole() {
 	/*メッセージフラグが立っていれば、メッセージボックス表示*/
 	/*上書きしていく*/
 	if (messageflag) {
-		DrawRotaGraph(SCREEN_WIDTH / 2, 300, 1, 0, messageBox, true);
+		DrawRotaGraph(SCREEN_WIDTH / 2, 500, 1, 0, messageBox, true);
 	}
 }
 
@@ -332,9 +418,9 @@ void outMessage() {
 
 	initConsole();
 	/*コンソール表示*/
-	DrawFormatString(160, 287, GetColor(255, 255, 255), "%s", message1);
-	DrawFormatString(160, 317, GetColor(255, 255, 255), "%s", message2);
-	DrawFormatString(160, 347, GetColor(255, 255, 255), "%s", message3);
+	DrawFormatString(100, 487, GetColor(255, 255, 255), "%s", message1);
+	DrawFormatString(100, 517, GetColor(255, 255, 255), "%s", message2);
+	DrawFormatString(100, 547, GetColor(255, 255, 255), "%s", message3);
 }
 
 /*ジャンプ処理*/
@@ -375,8 +461,10 @@ void moveJump(pokemon* me) {
 /*周囲のマスに敵が居るか居ないか*/
 /*攻撃時に使用する*/
 bool isNearPokemon(pokemon* me, pokemon* enemy) {
-	if ((me->x - CHIP_SIZE <= enemy->x) && (me->x + CHIP_SIZE >= enemy->x) && (me->y - CHIP_SIZE <= enemy->y) && (me->y + CHIP_SIZE >= enemy->y))return true;
-	else return false;
+	if ((me->x - CHIP_SIZE <= enemy->x) && (me->x + CHIP_SIZE >= enemy->x) && (me->y - CHIP_SIZE <= enemy->y) && (me->y + CHIP_SIZE >= enemy->y)) {
+		return true;
+	}
+	return false;
 }
 
 /*同じマップ内にいるかどうか*/
@@ -386,19 +474,22 @@ bool findPokemon(pokemon* me, pokemon* enemy) {
 }
 
 /*敵の動き*/
-void enemyMove(pokemon * enemy) {
+void enemyMove(pokemon* enemy) {
 
+
+	/*生きているか死んでいるか*/
+	/*死亡確認*/
+	if (enemy->hp == 0 && enemy->isLive) {
+		PlaySoundMem(down, DX_PLAYTYPE_BACK);
+		c->experience += enemy->experience;
+		sprintf_s(s, 256, "%sは倒れた! 経験値%dを獲得!", enemy->name,enemy->experience);
+		setMessage(s);
+		outMessage();
+		enemy->isLive = false;
+	}
+
+	/*敵が同じマップ内にいると、自分に向かってくる*/
 	if (findPokemon(enemy, c)) {
-		/*生きているか死んでいるか*/
-		/*死亡確認*/
-		if (enemy->hp == 0 && enemy->isLive) {
-			PlaySoundMem(down, DX_PLAYTYPE_BACK);
-			sprintf_s(s, 256, "%sは倒れた!", enemy->name);
-			setMessage(s);
-			outMessage();
-			enemy->isLive = false;
-		}
-
 		/*攻撃しない*/
 		/*移動処理*/
 		if (!isNearPokemon(enemy, c) && enemy->isLive) {
@@ -421,13 +512,12 @@ void enemyMove(pokemon * enemy) {
 		}
 		/*攻撃する*/
 		else if (c->hp > 0 && enemy->isLive) {
-			WaitTimer(300);
-			turnToPokemon(enemy, c);
-			attack(enemy, c, 0);
+			attack(enemy, c, getRandom(0,3));		//ランダムでわざを選ぶ
 		}
 	}
+	/*まだ自分が見つかっていない場合、うろうろする*/
 	else {
-		switch (getRandom()) {
+		switch (getRandom(0,3)) {
 		case 0:
 			enemy->x -= CHIP_SIZE;
 			enemy->direction = LEFT;
@@ -446,14 +536,17 @@ void enemyMove(pokemon * enemy) {
 			break;
 		}
 	}
+
 }
 
-int getRandom() {
+/*0～3の乱数を得る*/
+int getRandom(int min,int max) {
+	
 	std::random_device rd;
 
 	std::mt19937 mt(rd());
 
-	std::uniform_int_distribution<int> dice(0, 3);
+	std::uniform_int_distribution<int> dice(min, max);
 
 	return dice(mt);
 }
