@@ -121,6 +121,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="define.h" />
+    <ClInclude Include="map.h" />
     <ClInclude Include="pokemon.h" />
     <ClInclude Include="skill.h" />
   </ItemGroup>

@@ -7,7 +7,7 @@
 #define SCREEN_HEIGHT    (600)                          // 画面の縦幅
 #define CHIP_SIZE        (40)                           // 一つのチップのサイズ
 #define MAP_HEIGHT		 (400)
-#define MAP_WIDTH		 (720)
+#define MAP_WIDTH		 (680)
 /*ジャンプ用変数*/
 int temp = 0;
 int y_temp = 0;
@@ -30,11 +30,16 @@ char keyState[256];			//押されているキーを格納
 /*フラグ*/
 bool endflag = false;		//qを押すと終わり
 bool menuflag = false;
+
+
 /*ポケモン構造体*/
 pokemon poke;
 pokemon dark;
 pokemon* c = &poke;
 pokemon* d = &dark;
+
+map mp;
+map* m = &mp;
 
 /*音声ファイルメモリ用配列*/
 int slap;
@@ -44,8 +49,8 @@ int down;
 /*画像ファイルメモリ用配列*/
 int messageBox;
 int skillBox;
-
-int attackNum;
+int stairs_down;
+int stairs_up;
 
 /*プロトタイプ宣言*/
 int init();
@@ -57,7 +62,7 @@ void setMessage(char[]);						//表示したいメッセージをセットする
 void outMessage();								//メッセージを表示する
 bool isNearPokemon(pokemon*, pokemon*);			//敵が近くにいたら(攻撃圏内にいたら)true
 bool findPokemon(pokemon*, pokemon*);
-void enemyMove(pokemon*);						//敵の動き
+void enemyMove(pokemon*,int);						//敵の動き
 int getRandom(int,int);
 
 /*キーが押されているフレーム数によって表示する画像を変更する*/
@@ -95,6 +100,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	int d_num = 0;
 	int tempTime = 0;
+	int floor = 0;
+	int nextCell[4];
+	int nowCell = 0;
 
 	/*白色を格納*/
 	const int white = GetColor(255, 255, 255);
@@ -106,6 +114,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// while(裏画面を表画面に反映, メッセージ処理, 画面クリア,フレームカウント)
 	while (ScreenFlip() == 0 && ProcessMessage() == 0 && ClearDrawScreen() == 0 && getCountFrame() == 0) {
 
+		for (int x = m->x; x < SCREEN_WIDTH/CHIP_SIZE - m->x; x++) {
+			for (int y = m->y; y < SCREEN_HEIGHT/CHIP_SIZE - m->y; y++) {
+				if (mapping[floor][y][x] == 0)		 { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, white, "0"); }//DrawRotaGraph(x*CHIP_SIZE + 20, y*CHIP_SIZE + 20, 1.5,0,c->moveTexture[0][0],true); }
+				else if (mapping[floor][y][x] == 1)  { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, GetColor(255,0,0), "1"); }
+				else if (mapping[floor][y][x] == 2)  { DrawRotaGraph((m->x + x) * CHIP_SIZE + 20   , (m->y + y) * CHIP_SIZE + 20, 1.5,0, d->moveTexture[0][0],true); }
+				else if (mapping[floor][y][x] == 3)  { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, GetColor(0, 0, 255), "B"); }
+				else if (mapping[floor][y][x] == 5)  { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, GetColor(0,0,255), "*"); }
+				else if (mapping[floor][y][x] == 100){ DrawRotaGraph((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, 1, 0, stairs_down, true);}
+				else if (mapping[floor][y][x] == 101){ DrawRotaGraph((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, 1, 0, stairs_up, true);}
+			}
+		}
+
 		/*500ms(0.5秒)に一度画像更新(歩いているように見える)*/
 		if (GetNowCount() - tempTime> 500) 
 		{	
@@ -115,19 +135,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 		/*階層、level、HP表示(固定)*/
-		DrawFormatString(0	, 0, white, "B1F");
+		DrawFormatString(0	, 0, white, "B%dF",floor + 1);
 		DrawFormatString(50	, 0, white, "Lv: %d",c->level);
 		DrawFormatString(120, 0, white, "HP: %d/ %d",c->hp,c->maxHp);
-		DrawFormatString(220, 0, white, "セットわざ名 : %s",c->skill[attackNum].name);
+		DrawFormatString(220, 0, white, "セットわざ名 : %s",c->skill[c->attackNum].name);
 		/*確認用座標(あとで消す)*/
-		DrawFormatString(500, 0, white, "ピカ座標(%d,%d)", c->x, c->y);
-		DrawFormatString(500, 20,white, "ダー座標(%d,%d)",d->x,d->y );
+		DrawFormatString(500, 0, white, "ピカ座標(%d,%d)", c->x + 20 - m->x * CHIP_SIZE, c->y + 20 - m->y * CHIP_SIZE);
+		DrawFormatString(500, 20, white, "ダー座標(%d,%d)", d->x + 20 - m->x * CHIP_SIZE, d->y + 20 - m->y*CHIP_SIZE);
 
 		/*DrawRotaGraph(x座標,y座標,縮尺度,角度,描画する画像ハンドル,背景透過処理のON,OFF)*/
 		/*座標は画像の真ん中に持つ*/
-		DrawRotaGraph(c->x, c->y, 1.5, 0, c->moveTexture[c->direction][d_num], true);
+		DrawRotaGraph(c->x + 20, c->y + 20, 1.5, 0, c->moveTexture[c->direction][d_num], true);
+		
 		/*生きてたら敵表示*/
-		if (d->isLive) { DrawRotaGraph(d->x, d->y, 1.5, 0, d->moveTexture[d->direction][d_num], true); }
+		if (d->isLive) { DrawRotaGraph(d->x + 20, d->y + 20, 1.5, 0, d->moveTexture[d->direction][d_num], true); }
 
 		/*メッセージ出力*/
 		outMessage();
@@ -145,54 +166,90 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			menuflag = true;
 		}
 
-		/*Attack*/
-		if (!jump && !menuflag && keyState[KEY_INPUT_Z] == 1) {
-			/*敵のいる方向に向きを変える*/
-			if (isNearPokemon(c, d) && d->isLive) {
-				attack(c, d, attackNum);
-			}
-			enemyMove(d);
+		if (menuflag) {
+			DrawRotaGraph(550, 160, 1, 0, skillBox, true);
+			DrawFormatString(530, 98,  white, "%s (%d/%d)", c->skill[0].name, c->skill[0].count, c->skill[0].maxCount);
+			DrawFormatString(530, 149, white, "%s (%d/%d)", c->skill[1].name, c->skill[1].count, c->skill[1].maxCount);
+			DrawFormatString(530, 199, white, "%s (%d/%d)", c->skill[2].name, c->skill[2].count, c->skill[2].maxCount);
+			DrawFormatString(530, 250, white, "%s (%d/%d)", c->skill[3].name, c->skill[3].count, c->skill[3].maxCount);
+			if (keyState[KEY_INPUT_1])		{ c->attackNum = 0; menuflag = false; }
+			else if (keyState[KEY_INPUT_2]) { c->attackNum = 1; menuflag = false; }
+			else if (keyState[KEY_INPUT_3]) { c->attackNum = 2; menuflag = false; }
+			else if (keyState[KEY_INPUT_4]) { c->attackNum = 3; menuflag = false; }
 		}
 
-		/*斜め移動も入れるならelse ifじゃなくてifだけにする*/
-		/*自分が動けば敵も動く*/
+		nextCell[RIGHT] = mapping[floor][c->y / CHIP_SIZE - m->y][(c->x + CHIP_SIZE) / CHIP_SIZE - m->x];
+		nextCell[LEFT]  = mapping[floor][c->y / CHIP_SIZE - m->y][(c->x - CHIP_SIZE) / CHIP_SIZE - m->x];
+		nextCell[UP]	= mapping[floor][(c->y - CHIP_SIZE) / CHIP_SIZE - m->y][c->x / CHIP_SIZE - m->x];
+		nextCell[DOWN]  = mapping[floor][(c->y + CHIP_SIZE) / CHIP_SIZE - m->y][c->x / CHIP_SIZE - m->x];
+		nowCell			= mapping[floor][c->y / CHIP_SIZE - m->y][c->x / CHIP_SIZE - m->x];
+
+		/*Attack*/
+		if (!menuflag && keyState[KEY_INPUT_Z] == 1) {
+			if (isNearPokemon(c, d) && d->isLive) {
+				attack(c, d, c->attackNum);
+			}
+			enemyMove(d,floor);
+		}
+
 		/*Right*/
-		else if (!menuflag && keyState[KEY_INPUT_RIGHT]==1) {
+		if (!menuflag && keyState[KEY_INPUT_RIGHT]==1) {
 			c->direction = RIGHT;
-			if (!keyState[KEY_INPUT_Y] && c->x < MAP_WIDTH && (!(d->x == c->x + CHIP_SIZE && d->y == c->y)||!d->isLive)) {
+			if(!(nextCell[RIGHT]==0 || nextCell[RIGHT]==5)){
+				if (c->x == MAP_WIDTH) m->x--;
+				/*　(Yが押されていない)								(敵が右にいない)			(敵が死んでいる)	*/
+				else if (!keyState[KEY_INPUT_Y] && (!(d->x == c->x + CHIP_SIZE && d->y == c->y) || !d->isLive)) {
 					c->x += CHIP_SIZE;
+				}
 			}
 		}
 
 		/*Left*/
 		else if (!menuflag && keyState[KEY_INPUT_LEFT]==1) { 
 			c->direction = LEFT;
-			if (!keyState[KEY_INPUT_Y] &&  c->x > CHIP_SIZE * 2 && (!(d->x == c->x - CHIP_SIZE && d->y == c->y)||!d->isLive)) {
-				c->x-=CHIP_SIZE;
+			if(!(nextCell[LEFT]==0 || nextCell[LEFT]==5)){
+				if (c->x == CHIP_SIZE * 2 && m->x != 0)m->x++;
+				else if (!keyState[KEY_INPUT_Y] && (!(d->x == c->x - CHIP_SIZE && d->y == c->y) || !d->isLive)) {
+					c->x -= CHIP_SIZE;
+				}
 			}
 		}
 
 		/*Up*/
-		if (!menuflag && !jump && keyState[KEY_INPUT_UP]==1) {
+		if (!menuflag && keyState[KEY_INPUT_UP]==1) {
 			c->direction = UP;
-			if (!keyState[KEY_INPUT_Y] && c->y > CHIP_SIZE * 2 && (!(d->y == c->y - CHIP_SIZE && d->x == c->x)||!d->isLive)) {
-				c->y-=CHIP_SIZE;
+			if (!(nextCell[UP]==0 || nextCell[UP]==5)) {
+				if (c->y == CHIP_SIZE * 2 && m->y != 0)m->y++;
+				else if (!keyState[KEY_INPUT_Y] && (!(d->y == c->y - CHIP_SIZE && d->x == c->x) || !d->isLive)) {
+					c->y -= CHIP_SIZE;
+				}
 			}
 		}
 
 		/*Down*/
-		else if (!menuflag && !jump && keyState[KEY_INPUT_DOWN]==1) {
+		else if (!menuflag && keyState[KEY_INPUT_DOWN]==1) {
 			c->direction = DOWN;
-			if (!keyState[KEY_INPUT_Y] && c->y < MAP_HEIGHT && (!(d->y == c->y + CHIP_SIZE && d->x == c->x)||!d->isLive)) {
-				c->y+=CHIP_SIZE;
+			if (!(nextCell[DOWN]==0 || nextCell[DOWN]==5)){
+				if (c->y == MAP_HEIGHT) m->y--;
+				else if (!keyState[KEY_INPUT_Y] && (!(d->y == c->y + CHIP_SIZE && d->x == c->x) || !d->isLive)) {
+					c->y += CHIP_SIZE;
+				}
 			}
 		}
 
 		if (!menuflag && !keyState[KEY_INPUT_Y]) {
 			if (keyState[KEY_INPUT_RIGHT] == 1 || keyState[KEY_INPUT_LEFT] == 1 || keyState[KEY_INPUT_UP] == 1 || keyState[KEY_INPUT_DOWN] == 1){
 				if(!(c->x == CHIP_SIZE * 2||c->x == MAP_WIDTH||c->y == CHIP_SIZE * 2 || c->y == MAP_HEIGHT) || !isNearPokemon(c,d))
-					enemyMove(d);
+					enemyMove(d,floor);
 			}
+		}
+
+		if (nowCell == 100) {
+			floor += 1;
+		}
+
+		if (nowCell == 101) {
+			floor -= 1;
 		}
 		/*おまけのジャンプ処理*/
 		//if (!jump && keyState[KEY_INPUT_SPACE] == 1) { 
@@ -205,17 +262,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//moveJump(c);
 		//}
 
-		if (menuflag) {
-			DrawRotaGraph(550, 160, 1, 0, skillBox, true);
-			DrawFormatString(530, 98,  white, "%s (%d/%d)", c->skill[0].name, c->skill[0].count, c->skill[0].maxCount);
-			DrawFormatString(530, 149, white, "%s (%d/%d)", c->skill[1].name, c->skill[1].count, c->skill[1].maxCount);
-			DrawFormatString(530, 199, white, "%s (%d/%d)", c->skill[2].name, c->skill[2].count, c->skill[2].maxCount);
-			DrawFormatString(530, 250, white, "%s (%d/%d)", c->skill[3].name, c->skill[3].count, c->skill[3].maxCount);
-			if (keyState[KEY_INPUT_1]) { attackNum = 0; menuflag = false; }
-			else if (keyState[KEY_INPUT_2]) { attackNum = 1; menuflag = false;}
-			else if (keyState[KEY_INPUT_3]) { attackNum = 2; menuflag = false;}
-			else if (keyState[KEY_INPUT_4]) { attackNum = 3; menuflag = false;}
-		}
 
 		if (endflag) {
 			break;
@@ -308,9 +354,15 @@ int init() {
 	d->skill[2].count = c->skill[2].maxCount;
 	d->skill[3].count = c->skill[3].maxCount;
 
+	d->voice = LoadSoundMem("音楽/ダークライvoice.mp3");
+
+	d->experience = 10000;
 
 	d->maxHp = 70;
 	d->hp = 70;
+
+	stairs_down = LoadGraph("画像/stairs.png");
+	stairs_up = LoadGraph("画像/stairs2.png");
 
 	/*白色の透過*/
 	SetTransColor(255, 255, 255);
@@ -332,6 +384,7 @@ int init() {
 	bgm = LoadSoundMem("音楽/bgm.mp3");
 	down = LoadSoundMem("音楽/down1.mp3");
 
+	return 0;
 }
 
 /*attack(自分,敵,攻撃の種類)*/
@@ -474,13 +527,14 @@ bool findPokemon(pokemon* me, pokemon* enemy) {
 }
 
 /*敵の動き*/
-void enemyMove(pokemon* enemy) {
+void enemyMove(pokemon* enemy,int floor) {
 
 
 	/*生きているか死んでいるか*/
 	/*死亡確認*/
 	if (enemy->hp == 0 && enemy->isLive) {
 		PlaySoundMem(down, DX_PLAYTYPE_BACK);
+		PlaySoundMem(enemy->voice,DX_PLAYTYPE_BACK);
 		c->experience += enemy->experience;
 		sprintf_s(s, 256, "%sは倒れた! 経験値%dを獲得!", enemy->name,enemy->experience);
 		setMessage(s);
@@ -492,22 +546,28 @@ void enemyMove(pokemon* enemy) {
 	if (findPokemon(enemy, c)) {
 		/*攻撃しない*/
 		/*移動処理*/
+		int nextCell[4];
+		nextCell[LEFT]  = mapping[floor][enemy->y / CHIP_SIZE - m->y][(enemy->x - CHIP_SIZE) / CHIP_SIZE - m->x];
+		nextCell[RIGHT] = mapping[floor][enemy->y / CHIP_SIZE - m->y][(enemy->x + CHIP_SIZE) / CHIP_SIZE - m->x];
+		nextCell[UP]    = mapping[floor][(enemy->y - CHIP_SIZE) / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
+		nextCell[DOWN]  = mapping[floor][(enemy->y + CHIP_SIZE) / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
+
 		if (!isNearPokemon(enemy, c) && enemy->isLive) {
 			if (c->x != enemy->x && c->x - CHIP_SIZE < enemy->x) {
-				enemy->x -= CHIP_SIZE;
 				enemy->direction = LEFT;
+				if (!(nextCell[LEFT]==0 || nextCell[LEFT]==5)) enemy->x -= CHIP_SIZE;
 			}
 			else if (c->x != enemy->x && c->x + CHIP_SIZE > enemy->x) {
-				enemy->x += CHIP_SIZE;
 				enemy->direction = RIGHT;
+				if (!(nextCell[RIGHT]==0 || nextCell[RIGHT]==5)) enemy->x += CHIP_SIZE;
 			}
 			if (c->y != enemy->y && c->y - CHIP_SIZE < enemy->y) {
-				enemy->y -= CHIP_SIZE;
 				enemy->direction = UP;
+				if (!(nextCell[UP]== 0 || nextCell[UP]==5)) enemy->y -= CHIP_SIZE;
 			}
 			else if (c->y != enemy->y && c->y + CHIP_SIZE > enemy->y) {
-				enemy->y += CHIP_SIZE;
 				enemy->direction = DOWN;
+				if (!(nextCell[DOWN]==0 || nextCell[DOWN]==5)) enemy->y += CHIP_SIZE;
 			}
 		}
 		/*攻撃する*/

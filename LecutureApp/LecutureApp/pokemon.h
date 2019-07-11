@@ -1,6 +1,7 @@
 #pragma once
 #include "define.h"
 #include "skill.h"
+#include "map.h"
 struct pokemon {
 	char* name;					//名前
 	bool isLive = true;			//生きているかどうか
@@ -11,6 +12,7 @@ struct pokemon {
 	int hp = 0;					//体力
 	int speed = 0;				//速さ
 	char* type;					//タイプ
+	int attackNum = 0;
 
 	int moveTexture[4][2];		//入力ファイルからinitファイルに書き出し、使用する予定
 	
