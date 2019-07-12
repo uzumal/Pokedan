@@ -64,6 +64,8 @@ bool isNearPokemon(pokemon*, pokemon*);			//敵が近くにいたら(攻撃圏内にいたら)tr
 bool findPokemon(pokemon*, pokemon*);
 void enemyMove(pokemon*,int);						//敵の動き
 int getRandom(int,int);
+void wait(int,char* s);
+void wait(int);
 
 /*キーが押されているフレーム数によって表示する画像を変更する*/
 /*
@@ -101,8 +103,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int d_num = 0;
 	int tempTime = 0;
 	int floor = 0;
-	int nextCell[4];
-	int nowCell = 0;
+	int nearCell[9];
 
 	/*白色を格納*/
 	const int white = GetColor(255, 255, 255);
@@ -177,12 +178,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			else if (keyState[KEY_INPUT_3]) { c->attackNum = 2; menuflag = false; }
 			else if (keyState[KEY_INPUT_4]) { c->attackNum = 3; menuflag = false; }
 		}
+		
+		/*後にsetNearMap関数化してもいいかも*/
+		nearCell[RIGHT]		= mapping[floor][c->y / CHIP_SIZE - m->y][(c->x + CHIP_SIZE) / CHIP_SIZE - m->x];
+		nearCell[LEFT]		= mapping[floor][c->y / CHIP_SIZE - m->y][(c->x - CHIP_SIZE) / CHIP_SIZE - m->x];
+		nearCell[UP]		= mapping[floor][(c->y - CHIP_SIZE) / CHIP_SIZE - m->y][c->x / CHIP_SIZE - m->x];
+		nearCell[DOWN]		= mapping[floor][(c->y + CHIP_SIZE) / CHIP_SIZE - m->y][c->x / CHIP_SIZE - m->x];
 
-		nextCell[RIGHT] = mapping[floor][c->y / CHIP_SIZE - m->y][(c->x + CHIP_SIZE) / CHIP_SIZE - m->x];
-		nextCell[LEFT]  = mapping[floor][c->y / CHIP_SIZE - m->y][(c->x - CHIP_SIZE) / CHIP_SIZE - m->x];
-		nextCell[UP]	= mapping[floor][(c->y - CHIP_SIZE) / CHIP_SIZE - m->y][c->x / CHIP_SIZE - m->x];
-		nextCell[DOWN]  = mapping[floor][(c->y + CHIP_SIZE) / CHIP_SIZE - m->y][c->x / CHIP_SIZE - m->x];
-		nowCell			= mapping[floor][c->y / CHIP_SIZE - m->y][c->x / CHIP_SIZE - m->x];
+		nearCell[RIGHT_UP]	= mapping[floor][(c->y - CHIP_SIZE) / CHIP_SIZE - m->y][(c->x + CHIP_SIZE) / CHIP_SIZE - m->x];
+		nearCell[RIGHT_DOWN]= mapping[floor][(c->y + CHIP_SIZE) / CHIP_SIZE - m->y][(c->x + CHIP_SIZE) / CHIP_SIZE - m->x];
+		nearCell[LEFT_UP]	= mapping[floor][(c->y - CHIP_SIZE) / CHIP_SIZE - m->y][(c->x - CHIP_SIZE) / CHIP_SIZE - m->x];
+		nearCell[LEFT_DOWN]	= mapping[floor][(c->y + CHIP_SIZE) / CHIP_SIZE - m->y][(c->x - CHIP_SIZE) / CHIP_SIZE - m->x];
+
+		nearCell[CENTER]	= mapping[floor][c->y / CHIP_SIZE - m->y][c->x / CHIP_SIZE - m->x];
 
 		/*Attack*/
 		if (!menuflag && keyState[KEY_INPUT_Z] == 1) {
@@ -195,10 +203,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/*Right*/
 		if (!menuflag && keyState[KEY_INPUT_RIGHT]==1) {
 			c->direction = RIGHT;
-			if(!(nextCell[RIGHT]==0 || nextCell[RIGHT]==5)){
+			if(nearCell[RIGHT]>0){
 				if (c->x == MAP_WIDTH) m->x--;
-				/*　(Yが押されていない)								(敵が右にいない)			(敵が死んでいる)	*/
-				else if (!keyState[KEY_INPUT_Y] && (!(d->x == c->x + CHIP_SIZE && d->y == c->y) || !d->isLive)) {
+				/*　(Yが押されていない)			(敵が死んでいる)	*/
+				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
 					c->x += CHIP_SIZE;
 				}
 			}
@@ -207,20 +215,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/*Left*/
 		else if (!menuflag && keyState[KEY_INPUT_LEFT]==1) { 
 			c->direction = LEFT;
-			if(!(nextCell[LEFT]==0 || nextCell[LEFT]==5)){
+			if(nearCell[LEFT]>0){
 				if (c->x == CHIP_SIZE * 2 && m->x != 0)m->x++;
-				else if (!keyState[KEY_INPUT_Y] && (!(d->x == c->x - CHIP_SIZE && d->y == c->y) || !d->isLive)) {
+				else if (!(keyState[KEY_INPUT_Y])  || !d->isLive) {
 					c->x -= CHIP_SIZE;
 				}
 			}
 		}
 
 		/*Up*/
-		if (!menuflag && keyState[KEY_INPUT_UP]==1) {
+		else if (!menuflag && keyState[KEY_INPUT_UP]==1) {
 			c->direction = UP;
-			if (!(nextCell[UP]==0 || nextCell[UP]==5)) {
+			if (nearCell[UP]>0) {
 				if (c->y == CHIP_SIZE * 2 && m->y != 0)m->y++;
-				else if (!keyState[KEY_INPUT_Y] && (!(d->y == c->y - CHIP_SIZE && d->x == c->x) || !d->isLive)) {
+				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive)) {
 					c->y -= CHIP_SIZE;
 				}
 			}
@@ -229,14 +237,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/*Down*/
 		else if (!menuflag && keyState[KEY_INPUT_DOWN]==1) {
 			c->direction = DOWN;
-			if (!(nextCell[DOWN]==0 || nextCell[DOWN]==5)){
+			if (nearCell[DOWN]>0){
 				if (c->y == MAP_HEIGHT) m->y--;
-				else if (!keyState[KEY_INPUT_Y] && (!(d->y == c->y + CHIP_SIZE && d->x == c->x) || !d->isLive)) {
+				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
 					c->y += CHIP_SIZE;
 				}
 			}
 		}
 
+		/*RightUp*/
+		else if (!menuflag && keyState[KEY_INPUT_RIGHT] == 1 && keyState[KEY_INPUT_UP] == 1) {
+			c->direction = UP;
+			if (nearCell[RIGHT_UP] > 0) {
+				if (c->y == CHIP_SIZE * 2 && c->x == MAP_WIDTH && m->y != 0) { m->x--; m->y++; }
+				else if(!keyState[KEY_INPUT_Y] || !d->isLive))
+			}
+		}
+
+		
 		if (!menuflag && !keyState[KEY_INPUT_Y]) {
 			if (keyState[KEY_INPUT_RIGHT] == 1 || keyState[KEY_INPUT_LEFT] == 1 || keyState[KEY_INPUT_UP] == 1 || keyState[KEY_INPUT_DOWN] == 1){
 				if(!(c->x == CHIP_SIZE * 2||c->x == MAP_WIDTH||c->y == CHIP_SIZE * 2 || c->y == MAP_HEIGHT) || !isNearPokemon(c,d))
@@ -244,12 +262,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 		}
 
-		if (nowCell == 100) {
+		if (nearCell[CENTER] == 100) {
 			floor += 1;
+			wait(2000,(char*)(floor+1));
 		}
 
-		if (nowCell == 101) {
+		if (nearCell[CENTER] == 101) {
 			floor -= 1;
+			wait(2000,(char*)(floor+1));
 		}
 		/*おまけのジャンプ処理*/
 		//if (!jump && keyState[KEY_INPUT_SPACE] == 1) { 
@@ -274,12 +294,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 }
 
 
+void wait(int ms,char* s) {
+	int tmp = GetNowCount();
+	while (ScreenFlip() == 0 && ProcessMessage() == 0 && ClearDrawScreen() == 0 && GetNowCount() - tmp < ms) {
+		DrawFormatString(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, GetColor(255,255,255), "B%dF", s);
+	}
+}
+
+void wait(int ms) {
+	int tmp = GetNowCount();
+	while (ScreenFlip() == 0 && ProcessMessage() == 0 && GetNowCount() - tmp < ms) {
+		
+	}
+}
 
 int init() {
 	/*ウインドウの大きさ指定*/
 	SetGraphMode(SCREEN_WIDTH, SCREEN_HEIGHT, 16);
 	/*背景色描画(後にマップ)*/
-	SetBackgroundColor(100, 100, 100);
+	SetBackgroundColor(20, 20, 20);
 	/*ウィンドウモードに指定*/
 	ChangeWindowMode(TRUE);
 	if (DxLib_Init() != 0) { return -1; }	// DXライブラリ初期化処理
@@ -546,32 +579,34 @@ void enemyMove(pokemon* enemy,int floor) {
 	if (findPokemon(enemy, c)) {
 		/*攻撃しない*/
 		/*移動処理*/
-		int nextCell[4];
-		nextCell[LEFT]  = mapping[floor][enemy->y / CHIP_SIZE - m->y][(enemy->x - CHIP_SIZE) / CHIP_SIZE - m->x];
-		nextCell[RIGHT] = mapping[floor][enemy->y / CHIP_SIZE - m->y][(enemy->x + CHIP_SIZE) / CHIP_SIZE - m->x];
-		nextCell[UP]    = mapping[floor][(enemy->y - CHIP_SIZE) / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
-		nextCell[DOWN]  = mapping[floor][(enemy->y + CHIP_SIZE) / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
+		int nearCell[4];
+
+		nearCell[LEFT]  = mapping[floor][enemy->y / CHIP_SIZE - m->y][(enemy->x - CHIP_SIZE) / CHIP_SIZE - m->x];
+		nearCell[RIGHT] = mapping[floor][enemy->y / CHIP_SIZE - m->y][(enemy->x + CHIP_SIZE) / CHIP_SIZE - m->x];
+		nearCell[UP]    = mapping[floor][(enemy->y - CHIP_SIZE) / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
+		nearCell[DOWN]  = mapping[floor][(enemy->y + CHIP_SIZE) / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
 
 		if (!isNearPokemon(enemy, c) && enemy->isLive) {
 			if (c->x != enemy->x && c->x - CHIP_SIZE < enemy->x) {
 				enemy->direction = LEFT;
-				if (!(nextCell[LEFT]==0 || nextCell[LEFT]==5)) enemy->x -= CHIP_SIZE;
+				if (!(nearCell[LEFT]==0 || nearCell[LEFT]==5)) enemy->x -= CHIP_SIZE;
 			}
 			else if (c->x != enemy->x && c->x + CHIP_SIZE > enemy->x) {
 				enemy->direction = RIGHT;
-				if (!(nextCell[RIGHT]==0 || nextCell[RIGHT]==5)) enemy->x += CHIP_SIZE;
+				if (!(nearCell[RIGHT]==0 || nearCell[RIGHT]==5)) enemy->x += CHIP_SIZE;
 			}
 			if (c->y != enemy->y && c->y - CHIP_SIZE < enemy->y) {
 				enemy->direction = UP;
-				if (!(nextCell[UP]== 0 || nextCell[UP]==5)) enemy->y -= CHIP_SIZE;
+				if (!(nearCell[UP]== 0 || nearCell[UP]==5)) enemy->y -= CHIP_SIZE;
 			}
 			else if (c->y != enemy->y && c->y + CHIP_SIZE > enemy->y) {
 				enemy->direction = DOWN;
-				if (!(nextCell[DOWN]==0 || nextCell[DOWN]==5)) enemy->y += CHIP_SIZE;
+				if (!(nearCell[DOWN]==0 || nearCell[DOWN]==5)) enemy->y += CHIP_SIZE;
 			}
 		}
 		/*攻撃する*/
 		else if (c->hp > 0 && enemy->isLive) {
+			wait(300);
 			attack(enemy, c, getRandom(0,3));		//ランダムでわざを選ぶ
 		}
 	}
