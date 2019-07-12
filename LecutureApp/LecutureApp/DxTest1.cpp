@@ -55,6 +55,7 @@ int stairs_up;
 /*プロトタイプ宣言*/
 int init();
 void attack(pokemon*, pokemon*, int);			//攻撃
+void attack_for(pokemon* me, int attackNum);	//プレイヤー用攻撃
 void turnToPokemon(pokemon*, pokemon*);			//ポケモンの方を向く
 void moveJump(pokemon*);						//Jumpする
 void initConsole();								//メッセージボックスを初期化する
@@ -188,6 +189,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		if (!menuflag && keyState[KEY_INPUT_Z] == 1) {
 			if (isNearPokemon(c, d) && d->isLive) {
 				attack(c, d, c->attackNum);
+			}
+			else if(d->isLive){
+				attack_for(c, c->attackNum);
 			}
 			enemyMove(d,floor);
 		}
@@ -390,25 +394,53 @@ int init() {
 /*attack(自分,敵,攻撃の種類)*/
 void attack(pokemon* me, pokemon* enemy, int attackNum) {
 
-	turnToPokemon(me, enemy);//敵の方を向く
+	//turnToPokemon(me, enemy);//敵の方を向く
 	
 	//ななめに居る時は攻撃しない
 	if (!(((me->x - CHIP_SIZE == enemy->x) && (me->y + CHIP_SIZE == enemy->y || me->y - CHIP_SIZE == enemy->y)) || (me->x + CHIP_SIZE == enemy->x) && (me->y + CHIP_SIZE == enemy->y || me->y - CHIP_SIZE == enemy->y))) {
-		if (me->skill[attackNum].count > 0) {
+		if ((me->x > enemy->x && me->direction == LEFT) || (me->x < enemy->x && me->direction == RIGHT) || (me->y > enemy->y && me->direction == UP) || (me->y < enemy->y && me->direction == DOWN)) {
+			if (me->skill[attackNum].count > 0) {
 
-			/*確率で攻撃が外れる*/
-			if (getRandom(1, 100) < 98) {
-				enemy->hp -= me->skill[attackNum].value;
-				if (enemy->hp < 0)enemy->hp = 0;//hpがマイナスになるのを防ぐ
-				sprintf_s(s, "%sの%s! %sに%dのダメージ!%sのHP:%d", me->name, me->skill[attackNum].name, enemy->name, me->skill[attackNum].value, enemy->name, enemy->hp);
-				PlaySoundMem(slap, DX_PLAYTYPE_BACK);
+				/*確率で攻撃が外れる*/
+				if (getRandom(1, 100) < 98) {
+					enemy->hp -= me->skill[attackNum].value;
+					if (enemy->hp < 0)enemy->hp = 0;//hpがマイナスになるのを防ぐ
+					sprintf_s(s, "%sの%s! %sに%dのダメージ!%sのHP:%d", me->name, me->skill[attackNum].name, enemy->name, me->skill[attackNum].value, enemy->name, enemy->hp);
+					PlaySoundMem(slap, DX_PLAYTYPE_BACK);
+				}
+				else {
+					sprintf_s(s, "%sの攻撃は外れた!", me->name);
+				}
 			}
 			else {
-				sprintf_s(s, "%sの攻撃は外れた!", me->name);
+				sprintf_s(s, "%sはもう使えない!", me->skill[attackNum].name);
 			}
+			me->skill[attackNum].count -= 1;
+			if (me->skill[attackNum].count < 0)me->skill[attackNum].count = 0;	//マイナスを防ぐ
+			messageflag = true;
+			setMessage(s);
+			outMessage();
 		}
 		else {
-			sprintf_s(s, "%sはもう使えない!",me->skill[attackNum].name);
+			attack_for(me, attackNum);
+		}
+	}
+
+
+}
+//プレイヤー攻撃用
+void attack_for(pokemon* me, int attackNum) {
+
+	//斜め以外
+	if (me->direction == LEFT || me->direction == RIGHT || me->direction == UP || me->direction == DOWN) {
+		if (me->skill[attackNum].count > 0) {
+
+			/*攻撃が外れる*/
+			sprintf_s(s, "%sの%s!しかし攻撃は外れた", me->name, me->skill[attackNum].name);
+			PlaySoundMem(slap, DX_PLAYTYPE_BACK);
+		}
+		else {
+			sprintf_s(s, "%sはもう使えない!", me->skill[attackNum].name);
 		}
 		me->skill[attackNum].count -= 1;
 		if (me->skill[attackNum].count < 0)me->skill[attackNum].count = 0;	//マイナスを防ぐ
@@ -555,7 +587,9 @@ void enemyMove(pokemon* enemy,int floor) {
 		if (!isNearPokemon(enemy, c) && enemy->isLive) {
 			if (c->x != enemy->x && c->x - CHIP_SIZE < enemy->x) {
 				enemy->direction = LEFT;
-				if (!(nextCell[LEFT]==0 || nextCell[LEFT]==5)) enemy->x -= CHIP_SIZE;
+				if (!(c->x == MAP_WIDTH)) {
+					if (!(nextCell[LEFT] == 0 || nextCell[LEFT] == 5)) enemy->x -= CHIP_SIZE;
+				}
 			}
 			else if (c->x != enemy->x && c->x + CHIP_SIZE > enemy->x) {
 				enemy->direction = RIGHT;
