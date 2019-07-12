@@ -104,6 +104,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int tempTime = 0;
 	int floor = 0;
 	int nearCell[9];
+	int enemyCell = 0;
 
 	/*白色を格納*/
 	const int white = GetColor(255, 255, 255);
@@ -143,6 +144,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/*確認用座標(あとで消す)*/
 		DrawFormatString(500, 0, white, "ピカ座標(%d,%d)", c->x + 20 - m->x * CHIP_SIZE, c->y + 20 - m->y * CHIP_SIZE);
 		DrawFormatString(500, 20, white, "ダー座標(%d,%d)", d->x + 20 - m->x * CHIP_SIZE, d->y + 20 - m->y*CHIP_SIZE);
+		DrawFormatString(500, 40, white, "マップ座標(%d,%d)", m->x, m->y);
 
 		/*DrawRotaGraph(x座標,y座標,縮尺度,角度,描画する画像ハンドル,背景透過処理のON,OFF)*/
 		/*座標は画像の真ん中に持つ*/
@@ -155,7 +157,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		outMessage();
 
 		/*qキーで終わり*/
-		if (keyState[KEY_INPUT_Q] == 1) { endflag = true; }
+		if (keyState[KEY_INPUT_SPACE] == 1) { endflag = true; }
 		
 		/*わざ表を消去*/
 		if (menuflag && keyState[KEY_INPUT_I] == 1) {
@@ -192,8 +194,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		nearCell[CENTER]	= mapping[floor][c->y / CHIP_SIZE - m->y][c->x / CHIP_SIZE - m->x];
 
+		enemyCell = mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x];
+
 		/*Attack*/
-		if (!menuflag && keyState[KEY_INPUT_Z] == 1) {
+		if (!menuflag && keyState[KEY_INPUT_J] == 1) {
 			if (isNearPokemon(c, d) && d->isLive) {
 				attack(c, d, c->attackNum);
 			}
@@ -201,66 +205,203 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 		/*Right*/
-		if (!menuflag && keyState[KEY_INPUT_RIGHT]==1) {
+		if (!menuflag && keyState[KEY_INPUT_D]==1) {
 			c->direction = RIGHT;
 			if(nearCell[RIGHT]>0){
-				if (c->x == MAP_WIDTH) m->x--;
-				/*　(Yが押されていない)			(敵が死んでいる)	*/
+				if (c->x == MAP_WIDTH) { 
+					m->x--;
+					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0)d->x-=CHIP_SIZE;
+				}
 				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
 					c->x += CHIP_SIZE;
+					if (c->x == d->x && c->y == d->y) { d->x = c->x- CHIP_SIZE; d->direction = RIGHT;}
+					enemyMove(d, floor);
 				}
 			}
 		}
 
 		/*Left*/
-		else if (!menuflag && keyState[KEY_INPUT_LEFT]==1) { 
+		else if (!menuflag && keyState[KEY_INPUT_A]==1) { 
 			c->direction = LEFT;
 			if(nearCell[LEFT]>0){
-				if (c->x == CHIP_SIZE * 2 && m->x != 0)m->x++;
+				if (c->x == CHIP_SIZE * 2 && m->x != 0) {
+					m->x++;
+					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0)d->x+=CHIP_SIZE;
+				}
 				else if (!(keyState[KEY_INPUT_Y])  || !d->isLive) {
 					c->x -= CHIP_SIZE;
+					if (c->x == d->x && c->y == d->y) { d->x = c->x + CHIP_SIZE; d->direction = LEFT;}
+					enemyMove(d, floor);
 				}
 			}
 		}
 
 		/*Up*/
-		else if (!menuflag && keyState[KEY_INPUT_UP]==1) {
+		else if (!menuflag && keyState[KEY_INPUT_W]==1) {
 			c->direction = UP;
 			if (nearCell[UP]>0) {
-				if (c->y == CHIP_SIZE * 2 && m->y != 0)m->y++;
-				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive)) {
+				if (c->y == CHIP_SIZE * 2 && m->y != 0) { 
+					m->y++;
+					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0)d->y+=CHIP_SIZE;
+				}
+				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
 					c->y -= CHIP_SIZE;
+					if (c->x == d->x && c->y == d->y) { d->y = c->y + CHIP_SIZE; d->direction = UP;}
+					enemyMove(d, floor);
 				}
 			}
 		}
 
 		/*Down*/
-		else if (!menuflag && keyState[KEY_INPUT_DOWN]==1) {
+		else if (!menuflag && keyState[KEY_INPUT_X]==1) {
 			c->direction = DOWN;
-			if (nearCell[DOWN]>0){
-				if (c->y == MAP_HEIGHT) m->y--;
+			if (nearCell[DOWN] > 0) {
+				if (c->y == MAP_HEIGHT){
+					m->y--;
+					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0)d->y-=CHIP_SIZE;
+				}
 				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
 					c->y += CHIP_SIZE;
+					if (c->x == d->x && c->y == d->y) { d->y = c->y - CHIP_SIZE; d->direction = DOWN;}
+					enemyMove(d, floor);
 				}
 			}
 		}
 
 		/*RightUp*/
-		else if (!menuflag && keyState[KEY_INPUT_RIGHT] == 1 && keyState[KEY_INPUT_UP] == 1) {
+		else if (!menuflag && keyState[KEY_INPUT_E] == 1) {
 			c->direction = UP;
 			if (nearCell[RIGHT_UP] > 0) {
-				if (c->y == CHIP_SIZE * 2 && c->x == MAP_WIDTH && m->y != 0) { m->x--; m->y++; }
-				else if(!keyState[KEY_INPUT_Y] || !d->isLive))
+				if (c->y == CHIP_SIZE * 2 && c->x == MAP_WIDTH) { 
+					if (m->y == 0) {
+						m->x--;
+						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) {d->x-=CHIP_SIZE;}
+					}
+					else {
+						m->y++; m->x--;
+						if (mapping[floor][d->y / CHIP_SIZE - m->y][c->x / CHIP_SIZE - m->x] <= 0) { d->x-=CHIP_SIZE; d->y+=CHIP_SIZE;}
+					}
+				}
+				else if (c->y == CHIP_SIZE * 2) {
+					if (m->y != 0) {
+						m->y++;
+						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->y += CHIP_SIZE; }
+					}
+				}
+				else if (c->x == MAP_WIDTH){
+					m->x--;
+					if (mapping[floor][d->y / CHIP_SIZE - m->y][c->x / CHIP_SIZE - m->x] <= 0) { d->x -= CHIP_SIZE; }
+				}
+				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
+					c->y-=CHIP_SIZE; c->x+=CHIP_SIZE;
+					if (c->x == d->x && c->y == d->y) { d->x = c->x - CHIP_SIZE; d->y = c->y + CHIP_SIZE; d->direction = UP; }
+					enemyMove(d, floor);
+				}
+			}
+		}
+		/*RightDown*/
+		else if (!menuflag && keyState[KEY_INPUT_C] == 1) {
+			c->direction = DOWN;
+			if (nearCell[RIGHT_DOWN] > 0) {
+				if (c->y == MAP_HEIGHT && c->x == MAP_WIDTH) { 
+					m->x--; m->y--; 
+					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x-=CHIP_SIZE; d->y-=CHIP_SIZE; }
+				}
+				else if (c->y == MAP_HEIGHT) {
+					m->y--;
+					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) {d->y -= CHIP_SIZE; }
+				}
+				else if (c->x == MAP_WIDTH) {
+					m->x--;
+					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) {d->x -= CHIP_SIZE;}
+				}
+				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
+					c->y+=CHIP_SIZE; c->x+=CHIP_SIZE;
+					if (c->x == d->x && c->y == d->y) { d->x = c->x - CHIP_SIZE; d->y = c->y - CHIP_SIZE; d->direction = DOWN;}
+					enemyMove(d, floor);
+				}
 			}
 		}
 
-		
+		/*LeftUp*/
+		else if (!menuflag && keyState[KEY_INPUT_Q] == 1) {
+			c->direction = UP;
+			if (nearCell[LEFT_UP] > 0) {
+				if (c->y == CHIP_SIZE * 2 && c->x == CHIP_SIZE * 2) { 
+					if (m->y == 0) {
+						m->x++;
+						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x+=CHIP_SIZE; }
+					}
+					else if (m->x == 0) { 
+						m->y++; 
+						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->y+=CHIP_SIZE; }
+					}
+					else {
+						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x+=CHIP_SIZE; d->y+=CHIP_SIZE; }
+					}
+				}
+				else if (c->y == CHIP_SIZE * 2) {
+					if (m->y != 0) {
+						m->y++;
+						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->y += CHIP_SIZE; }
+					}
+				}
+				else if (c->x == CHIP_SIZE * 2) {
+					if (m->x != 0) {
+						m->x++;
+						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x += CHIP_SIZE; }
+					}
+				}
+				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
+					c->y-=CHIP_SIZE; c->x-=CHIP_SIZE;
+					if (c->x == d->x && c->y == d->y) { d->x = c->x + CHIP_SIZE; d->y = c->y + CHIP_SIZE; d->direction = UP;}
+					enemyMove(d, floor);
+				}
+			}
+		}
+
+		/*LeftDown*/
+		else if (!menuflag && keyState[KEY_INPUT_Z] == 1) {
+			c->direction = DOWN;
+			if (nearCell[LEFT_DOWN] > 0) {
+				if (c->y ==  MAP_HEIGHT && c->x == CHIP_SIZE * 2) { 
+					if (m->x == 0) {
+						m->y--;
+						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->y-=CHIP_SIZE; }
+					}
+					else {
+						m->x++; m->y--;
+						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x+=CHIP_SIZE; d->y-=CHIP_SIZE; }
+					}
+				}
+				else if (c->y == MAP_HEIGHT) {
+					m->y--;
+					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->y -= CHIP_SIZE; }
+				}
+				else if (c->x == CHIP_SIZE * 2) {
+					if (m->x != 0) {
+						m->x++;
+						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x += CHIP_SIZE; }
+					}
+				}
+				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
+					c->y+=CHIP_SIZE; c->x-=CHIP_SIZE;
+					if (c->x == d->x && c->y == d->y) { d->x = c->x + CHIP_SIZE; d->y = c->y - CHIP_SIZE; d->direction = DOWN; }
+					enemyMove(d, floor);
+				}
+			}
+		}
+
+
+		/*
 		if (!menuflag && !keyState[KEY_INPUT_Y]) {
-			if (keyState[KEY_INPUT_RIGHT] == 1 || keyState[KEY_INPUT_LEFT] == 1 || keyState[KEY_INPUT_UP] == 1 || keyState[KEY_INPUT_DOWN] == 1){
+			if (keyState[KEY_INPUT_Q] == 1 || keyState[KEY_INPUT_W] == 1 || keyState[KEY_INPUT_] == 1 || keyState[KEY_INPUT_DOWN] == 1){
 				if(!(c->x == CHIP_SIZE * 2||c->x == MAP_WIDTH||c->y == CHIP_SIZE * 2 || c->y == MAP_HEIGHT) || !isNearPokemon(c,d))
 					enemyMove(d,floor);
 			}
 		}
+		*/
+
 
 		if (nearCell[CENTER] == 100) {
 			floor += 1;
@@ -427,6 +568,7 @@ void attack(pokemon* me, pokemon* enemy, int attackNum) {
 	
 	//ななめに居る時は攻撃しない
 	if (!(((me->x - CHIP_SIZE == enemy->x) && (me->y + CHIP_SIZE == enemy->y || me->y - CHIP_SIZE == enemy->y)) || (me->x + CHIP_SIZE == enemy->x) && (me->y + CHIP_SIZE == enemy->y || me->y - CHIP_SIZE == enemy->y))) {
+		wait(200);
 		if (me->skill[attackNum].count > 0) {
 
 			/*確率で攻撃が外れる*/
@@ -579,34 +721,57 @@ void enemyMove(pokemon* enemy,int floor) {
 	if (findPokemon(enemy, c)) {
 		/*攻撃しない*/
 		/*移動処理*/
-		int nearCell[4];
+		int nearCell[9];
 
-		nearCell[LEFT]  = mapping[floor][enemy->y / CHIP_SIZE - m->y][(enemy->x - CHIP_SIZE) / CHIP_SIZE - m->x];
-		nearCell[RIGHT] = mapping[floor][enemy->y / CHIP_SIZE - m->y][(enemy->x + CHIP_SIZE) / CHIP_SIZE - m->x];
-		nearCell[UP]    = mapping[floor][(enemy->y - CHIP_SIZE) / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
-		nearCell[DOWN]  = mapping[floor][(enemy->y + CHIP_SIZE) / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
+		nearCell[RIGHT]		= mapping[floor][enemy->y / CHIP_SIZE - m->y][(enemy->x + CHIP_SIZE) / CHIP_SIZE - m->x];
+		nearCell[LEFT]		= mapping[floor][enemy->y / CHIP_SIZE - m->y][(enemy->x - CHIP_SIZE) / CHIP_SIZE - m->x];
+		nearCell[UP]		= mapping[floor][(enemy->y - CHIP_SIZE) / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
+		nearCell[DOWN]		= mapping[floor][(enemy->y + CHIP_SIZE) / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
+
+		nearCell[RIGHT_UP]	= mapping[floor][(enemy->y - CHIP_SIZE) / CHIP_SIZE - m->y][(enemy->x + CHIP_SIZE) / CHIP_SIZE - m->x];
+		nearCell[RIGHT_DOWN]= mapping[floor][(enemy->y + CHIP_SIZE) / CHIP_SIZE - m->y][(enemy->x + CHIP_SIZE) / CHIP_SIZE - m->x];
+		nearCell[LEFT_UP]	= mapping[floor][(enemy->y - CHIP_SIZE) / CHIP_SIZE - m->y][(enemy->x - CHIP_SIZE) / CHIP_SIZE - m->x];
+		nearCell[LEFT_DOWN]	= mapping[floor][(enemy->y + CHIP_SIZE) / CHIP_SIZE - m->y][(enemy->x - CHIP_SIZE) / CHIP_SIZE - m->x];
+
+		nearCell[CENTER]	= mapping[floor][enemy->y / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
+		
 
 		if (!isNearPokemon(enemy, c) && enemy->isLive) {
-			if (c->x != enemy->x && c->x - CHIP_SIZE < enemy->x) {
+			if (c->x!=enemy->x && c->y == enemy->y && c->x < enemy->x) {
 				enemy->direction = LEFT;
-				if (!(nearCell[LEFT]==0 || nearCell[LEFT]==5)) enemy->x -= CHIP_SIZE;
+				if (nearCell[LEFT]>0) enemy->x -= CHIP_SIZE;
 			}
-			else if (c->x != enemy->x && c->x + CHIP_SIZE > enemy->x) {
+			else if (c->x!=enemy->x && c->y == enemy->y && c->x > enemy->x) {
 				enemy->direction = RIGHT;
-				if (!(nearCell[RIGHT]==0 || nearCell[RIGHT]==5)) enemy->x += CHIP_SIZE;
+				if (nearCell[RIGHT]>0) enemy->x += CHIP_SIZE;
 			}
-			if (c->y != enemy->y && c->y - CHIP_SIZE < enemy->y) {
+			else if (c->y!=enemy->y && c->x == enemy->x && c->y < enemy->y) {
 				enemy->direction = UP;
-				if (!(nearCell[UP]== 0 || nearCell[UP]==5)) enemy->y -= CHIP_SIZE;
+				if (nearCell[UP]>0) enemy->y -= CHIP_SIZE;
 			}
-			else if (c->y != enemy->y && c->y + CHIP_SIZE > enemy->y) {
+			else if (c->y != enemy->y && c->x == enemy->x && c->y > enemy->y) {
 				enemy->direction = DOWN;
-				if (!(nearCell[DOWN]==0 || nearCell[DOWN]==5)) enemy->y += CHIP_SIZE;
+				if (nearCell[DOWN]>0) enemy->y += CHIP_SIZE;
+			}
+			else if (c->x != enemy->x && c->y != enemy->y &&c->x < enemy->x && c->y < enemy->y) {
+				enemy->direction = UP;
+				if (nearCell[LEFT_UP] > 0) { enemy->y -= CHIP_SIZE; enemy->x -= CHIP_SIZE; }
+			}
+			else if (c->x != enemy->x && c->y != enemy->y && c->x < enemy->x && c->y > enemy->y) {
+				enemy->direction = DOWN;
+				if (nearCell[LEFT_DOWN] > 0) { enemy->y += CHIP_SIZE; enemy->x -= CHIP_SIZE; }
+			}
+			else if (c->x != enemy->x && c->y != enemy->y && c->x > enemy->x && c->y < enemy->y) {
+				enemy->direction = UP;
+				if (nearCell[RIGHT_UP] > 0) { enemy->y -= CHIP_SIZE; enemy->x += CHIP_SIZE; }
+			}
+			else if (c->x != enemy->x && c->y != enemy->y && c->x > enemy->x && c->y > enemy->y) {
+				enemy->direction = DOWN;
+				if (nearCell[RIGHT_DOWN] > 0) { enemy->y += CHIP_SIZE; enemy->x += CHIP_SIZE; }
 			}
 		}
 		/*攻撃する*/
-		else if (c->hp > 0 && enemy->isLive) {
-			wait(300);
+		else if (isNearPokemon(enemy, c) && c->hp > 0 && enemy->isLive) {
 			attack(enemy, c, getRandom(0,3));		//ランダムでわざを選ぶ
 		}
 	}
