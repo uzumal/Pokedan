@@ -6,6 +6,7 @@ struct pokemon {
 	char* name;					//名前
 	bool isLive = true;			//生きているかどうか
 	
+	int Max_ex = 80;
 	int level = 1;				//レベル
 	int experience = 0;			//経験値(自分の場合:敵の経験値を加算する　敵の場合:自分に加算するための経験値を持つ)
 	int maxHp = 0;				//レベル増加による体力最大値の変化に対応(させる予定)

@@ -54,7 +54,10 @@ int stairs_up;
 
 /*プロトタイプ宣言*/
 int init();
+void w_press();										//Kボタン押したら進
 void attack(pokemon*, pokemon*, int);			//攻撃
+void attack_for(pokemon* me, int attackNum);	//プレイヤー用攻撃
+void skillfull(int experience);					//技威力
 void turnToPokemon(pokemon*, pokemon*);			//ポケモンの方を向く
 void moveJump(pokemon*);						//Jumpする
 void initConsole();								//メッセージボックスを初期化する
@@ -62,6 +65,7 @@ void setMessage(char[]);						//表示したいメッセージをセットする
 void outMessage();								//メッセージを表示する
 bool isNearPokemon(pokemon*, pokemon*);			//敵が近くにいたら(攻撃圏内にいたら)true
 bool findPokemon(pokemon*, pokemon*);
+bool life(pokemon* enemy, pokemon* me);						//敵死んでいるかどうか
 void enemyMove(pokemon*,int);						//敵の動き
 int getRandom(int,int);
 void wait(int,char* s);
@@ -92,6 +96,25 @@ int getCountFrame() {
 	return 0;
 }
 /******************************************************************************/
+
+/*
+void Screen() {
+	while () {
+		sprintf_s(s, "ようこそポケモンの世界へ");
+
+		messageflag = true;
+		setMessage(s);
+		outMessage();
+	}
+}*/
+
+void w_press() {
+	while (getCountFrame() == 0) {
+		if (keyState[KEY_INPUT_K] == 1) {
+			break;
+		}
+	}
+}
 
 
 /***********************      Mainの処理      *********************************/
@@ -201,8 +224,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			if (isNearPokemon(c, d) && d->isLive) {
 				attack(c, d, c->attackNum);
 			}
-			enemyMove(d,floor);
+			else if (d->isLive) {
+				attack_for(c, c->attackNum);
+			}
+			if (life(d, c) == FALSE) {
+				enemyMove(d, floor);
+			}
 		}
+
 
 		/*Right*/
 		if (!menuflag && keyState[KEY_INPUT_D]==1) {
@@ -498,6 +527,8 @@ int init() {
 	c->maxHp = 30;
 	c->hp = 30;
 
+	skillfull(0);
+
 	d->moveTexture[DOWN][0] = LoadGraph("画像/ダークライd_1.png");
 	d->moveTexture[DOWN][1] = LoadGraph("画像/ダークライd_2.png");
 	d->moveTexture[UP][0] = LoadGraph("画像/ダークライu_1.png");
@@ -561,29 +592,78 @@ int init() {
 	return 0;
 }
 
+//技威力設定
+void skillfull(int level) {
+	c->skill[0].min = 2 + level * 2;
+	c->skill[0].max = 4 + level * 2;
+	c->skill[1].min = 5 + level * 2;
+	c->skill[1].max = 8 + level * 2;
+	c->skill[2].min = 8 + level * 2;
+	c->skill[2].max = 14 + level * 2;
+	c->skill[3].min = 1 + level * 2;
+	c->skill[3].max = 3 + level * 2;
+
+	d->skill[0].min = 2;
+	d->skill[0].max = 4;
+	d->skill[1].min = 3;
+	d->skill[1].max = 6;
+	d->skill[2].min = 8;
+	d->skill[2].max = 14;
+	d->skill[3].min = 4;
+	d->skill[3].max = 8;
+}
+
+
 /*attack(自分,敵,攻撃の種類)*/
 void attack(pokemon* me, pokemon* enemy, int attackNum) {
 
-	turnToPokemon(me, enemy);//敵の方を向く
-	
+	//turnToPokemon(me, enemy);//敵の方を向く
+	int value = getRandom(me->skill[attackNum].min, me->skill[attackNum].max);
 	//ななめに居る時は攻撃しない
 	if (!(((me->x - CHIP_SIZE == enemy->x) && (me->y + CHIP_SIZE == enemy->y || me->y - CHIP_SIZE == enemy->y)) || (me->x + CHIP_SIZE == enemy->x) && (me->y + CHIP_SIZE == enemy->y || me->y - CHIP_SIZE == enemy->y))) {
-		wait(200);
-		if (me->skill[attackNum].count > 0) {
+		if ((me->x > enemy->x && me->direction == LEFT) || (me->x < enemy->x && me->direction == RIGHT) || (me->y > enemy->y && me->direction == UP) || (me->y < enemy->y && me->direction == DOWN)) {
+			if (me->skill[attackNum].count > 0) {
 
-			/*確率で攻撃が外れる*/
-			if (getRandom(1, 100) < 98) {
-				enemy->hp -= me->skill[attackNum].value;
-				if (enemy->hp < 0)enemy->hp = 0;//hpがマイナスになるのを防ぐ
-				sprintf_s(s, "%sの%s! %sに%dのダメージ!%sのHP:%d", me->name, me->skill[attackNum].name, enemy->name, me->skill[attackNum].value, enemy->name, enemy->hp);
-				PlaySoundMem(slap, DX_PLAYTYPE_BACK);
+				/*確率で攻撃が外れる*/
+				if (getRandom(1, 100) < 98) {
+					enemy->hp -= value;
+					if (enemy->hp < 0)enemy->hp = 0;//hpがマイナスになるのを防ぐ
+					sprintf_s(s, "%sの%s! %sに%dのダメージ!%sのHP:%d", me->name, me->skill[attackNum].name, enemy->name, value, enemy->name, enemy->hp);
+					PlaySoundMem(slap, DX_PLAYTYPE_BACK);
+				}
+				else {
+					sprintf_s(s, "%sの攻撃は外れた!", me->name);
+				}
 			}
 			else {
-				sprintf_s(s, "%sの攻撃は外れた!", me->name);
+				sprintf_s(s, "%sはもう使えない!", me->skill[attackNum].name);
 			}
+			me->skill[attackNum].count -= 1;
+			if (me->skill[attackNum].count < 0)me->skill[attackNum].count = 0;	//マイナスを防ぐ
+			messageflag = true;
+			setMessage(s);
+			outMessage();
 		}
 		else {
-			sprintf_s(s, "%sはもう使えない!",me->skill[attackNum].name);
+			attack_for(me, attackNum);
+		}
+	}
+
+
+}
+//プレイヤー攻撃用
+void attack_for(pokemon* me, int attackNum) {
+
+	//斜め以外
+	if (me->direction == LEFT || me->direction == RIGHT || me->direction == UP || me->direction == DOWN) {
+		if (me->skill[attackNum].count > 0) {
+
+			/*攻撃が外れる*/
+			sprintf_s(s, "%sの%s!しかし攻撃は外れた", me->name, me->skill[attackNum].name);
+			PlaySoundMem(slap, DX_PLAYTYPE_BACK);
+		}
+		else {
+			sprintf_s(s, "%sはもう使えない!", me->skill[attackNum].name);
 		}
 		me->skill[attackNum].count -= 1;
 		if (me->skill[attackNum].count < 0)me->skill[attackNum].count = 0;	//マイナスを防ぐ
@@ -592,6 +672,8 @@ void attack(pokemon* me, pokemon* enemy, int attackNum) {
 		outMessage();
 	}
 }
+
+
 
 /*攻撃時に敵の方を向く*/
 /*のちに向かせる前に画像を敷いてダブリを無くす*/
@@ -701,21 +783,38 @@ bool findPokemon(pokemon* me, pokemon* enemy) {
 	else return false;
 }
 
-/*敵の動き*/
-void enemyMove(pokemon* enemy,int floor) {
+//敵が死んでいるか判定
+bool life(pokemon* enemy, pokemon* me) {
 
-
+	int ex = 0;
 	/*生きているか死んでいるか*/
 	/*死亡確認*/
 	if (enemy->hp == 0 && enemy->isLive) {
 		PlaySoundMem(down, DX_PLAYTYPE_BACK);
-		PlaySoundMem(enemy->voice,DX_PLAYTYPE_BACK);
+		PlaySoundMem(enemy->voice, DX_PLAYTYPE_BACK);
 		c->experience += enemy->experience;
-		sprintf_s(s, 256, "%sは倒れた! 経験値%dを獲得!", enemy->name,enemy->experience);
+		sprintf_s(s, 256, "%sは倒れた! 経験値%dを獲得!", enemy->name, enemy->experience);
 		setMessage(s);
 		outMessage();
+		wait(400);
+		while (me->Max_ex < enemy->experience) {
+			enemy->experience = enemy->experience - me->Max_ex;
+			me->level++;
+			me->Max_ex += 30;
+			sprintf_s(s, "%sは%dレベルに上がった！", me->name, me->level);
+			setMessage(s);
+			outMessage();
+			wait(400);
+			//w_press();
+		}
 		enemy->isLive = false;
+		return TRUE;
 	}
+}
+
+
+/*敵の動き*/
+void enemyMove(pokemon* enemy,int floor) {
 
 	/*敵が同じマップ内にいると、自分に向かってくる*/
 	if (findPokemon(enemy, c)) {
@@ -737,21 +836,29 @@ void enemyMove(pokemon* enemy,int floor) {
 		
 
 		if (!isNearPokemon(enemy, c) && enemy->isLive) {
-			if (c->x!=enemy->x && c->y == enemy->y && c->x < enemy->x) {
+			if (c->x != enemy->x && c->x + CHIP_SIZE < enemy->x) {
 				enemy->direction = LEFT;
-				if (nearCell[LEFT]>0) enemy->x -= CHIP_SIZE;
+				if (!(c->x == MAP_WIDTH)) {
+					if (nearCell[LEFT] > 0) enemy->x -= CHIP_SIZE;
+				}
 			}
-			else if (c->x!=enemy->x && c->y == enemy->y && c->x > enemy->x) {
+			else if (c->x != enemy->x && c->x + CHIP_SIZE > enemy->x) {
 				enemy->direction = RIGHT;
-				if (nearCell[RIGHT]>0) enemy->x += CHIP_SIZE;
+				if (!(c->x != enemy->x && c->x - CHIP_SIZE < enemy->x)) {
+					if (nearCell[RIGHT] > 0 ) enemy->x += CHIP_SIZE;
+				}
 			}
-			else if (c->y!=enemy->y && c->x == enemy->x && c->y < enemy->y) {
+			else if (c->y != enemy->y && c->y - CHIP_SIZE < enemy->y) {
 				enemy->direction = UP;
-				if (nearCell[UP]>0) enemy->y -= CHIP_SIZE;
+				if (!(c->y == CHIP_SIZE * 2 && m->y != 0)) {
+					if (nearCell[UP] > 0) enemy->y -= CHIP_SIZE;
+				}
 			}
-			else if (c->y != enemy->y && c->x == enemy->x && c->y > enemy->y) {
+			else if (c->y != enemy->y && c->y + CHIP_SIZE > enemy->y) {
 				enemy->direction = DOWN;
-				if (nearCell[DOWN]>0) enemy->y += CHIP_SIZE;
+				if (!(c->y == MAP_HEIGHT)) {					//マップ動いた時用
+					if (nearCell[DOWN] > 0 ) enemy->y += CHIP_SIZE;
+				}
 			}
 			else if (c->x != enemy->x && c->y != enemy->y &&c->x < enemy->x && c->y < enemy->y) {
 				enemy->direction = UP;
@@ -772,6 +879,7 @@ void enemyMove(pokemon* enemy,int floor) {
 		}
 		/*攻撃する*/
 		else if (isNearPokemon(enemy, c) && c->hp > 0 && enemy->isLive) {
+			turnToPokemon(enemy, c);
 			attack(enemy, c, getRandom(0,3));		//ランダムでわざを選ぶ
 		}
 	}

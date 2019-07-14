@@ -3,6 +3,8 @@
 
 struct skill {
 
+	int min;
+	int max;
 	int value;			//攻撃の値(initファイルから読み込み予定)
 	char* name;			//技名
 	int count;			//わざを使える回数
