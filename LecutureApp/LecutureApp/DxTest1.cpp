@@ -443,7 +443,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		*/
 
-
+		/*ŠK’iˆÚ“®ˆ—*/
 		if (nearCell[CENTER] == 100) {
 			floor += 1;
 			wait(2000,(char*)(floor+1));
@@ -630,9 +630,10 @@ void skillfull(int level) {
 void attack(pokemon* me, pokemon* enemy, int attackNum) {
 
 	//turnToPokemon(me, enemy);//“G‚Ì•û‚ðŒü‚­
-	int value = getRandom(me->skill[attackNum].min, me->skill[attackNum].max);
+	int value = getRandom(me->skill[attackNum].min, me->skill[attackNum].max);	//‚í‚´‚ðo‚·‚½‚Ñ‚É—”¶¬
 	//‚È‚È‚ß‚É‹‚éŽž‚ÍUŒ‚‚µ‚È‚¢
 	if (!(((me->x - CHIP_SIZE == enemy->x) && (me->y + CHIP_SIZE == enemy->y || me->y - CHIP_SIZE == enemy->y)) || (me->x + CHIP_SIZE == enemy->x) && (me->y + CHIP_SIZE == enemy->y || me->y - CHIP_SIZE == enemy->y))) {
+		//“G‚Ì•û‚ðŒü‚¢‚Ä‚¢‚éê‡
 		if ((me->x > enemy->x && me->direction == LEFT) || (me->x < enemy->x && me->direction == RIGHT) || (me->y > enemy->y && me->direction == UP) || (me->y < enemy->y && me->direction == DOWN)) {
 			if (me->skill[attackNum].count > 0) {
 
@@ -644,7 +645,8 @@ void attack(pokemon* me, pokemon* enemy, int attackNum) {
 					PlaySoundMem(slap, DX_PLAYTYPE_BACK);
 				}
 				else {
-					sprintf_s(s, "%s‚ÌUŒ‚‚ÍŠO‚ê‚½!", me->name);
+					sprintf_s(s, "%s‚Ì%s!‚µ‚©‚µUŒ‚‚ÍŠO‚ê‚½", me->name, me->skill[attackNum].name);
+					PlaySoundMem(slap, DX_PLAYTYPE_BACK);
 				}
 			}
 			else {
@@ -656,6 +658,7 @@ void attack(pokemon* me, pokemon* enemy, int attackNum) {
 			setMessage(s);
 			outMessage();
 		}
+		//“G‚Ì•û‚ðŒü‚¢‚Ä‚¢‚È‚¢ê‡
 		else {
 			attack_for(me, attackNum);
 		}
@@ -663,26 +666,24 @@ void attack(pokemon* me, pokemon* enemy, int attackNum) {
 
 
 }
-//ƒvƒŒƒCƒ„[UŒ‚—p
+//ƒvƒŒƒCƒ„[UŒ‚—p,“G‚ªŽü‚è‚É‚¨‚ç‚¸UŒ‚‚ª•K‚¸ŠO‚ê‚éê‡
 void attack_for(pokemon* me, int attackNum) {
 
 	//ŽÎ‚ßˆÈŠO
-	if (me->direction == LEFT || me->direction == RIGHT || me->direction == UP || me->direction == DOWN) {
-		if (me->skill[attackNum].count > 0) {
+	if (me->skill[attackNum].count > 0) {
 
-			/*UŒ‚‚ªŠO‚ê‚é*/
-			sprintf_s(s, "%s‚Ì%s!‚µ‚©‚µUŒ‚‚ÍŠO‚ê‚½", me->name, me->skill[attackNum].name);
-			PlaySoundMem(slap, DX_PLAYTYPE_BACK);
-		}
-		else {
-			sprintf_s(s, "%s‚Í‚à‚¤Žg‚¦‚È‚¢!", me->skill[attackNum].name);
-		}
-		me->skill[attackNum].count -= 1;
-		if (me->skill[attackNum].count < 0)me->skill[attackNum].count = 0;	//ƒ}ƒCƒiƒX‚ð–h‚®
-		messageflag = true;
-		setMessage(s);
-		outMessage();
+		/*UŒ‚‚ªŠO‚ê‚é*/
+		sprintf_s(s, "%s‚Ì%s!‚µ‚©‚µUŒ‚‚ÍŠO‚ê‚½", me->name, me->skill[attackNum].name);
+		PlaySoundMem(slap, DX_PLAYTYPE_BACK);
 	}
+	else {
+		sprintf_s(s, "%s‚Í‚à‚¤Žg‚¦‚È‚¢!", me->skill[attackNum].name);
+	}
+	me->skill[attackNum].count -= 1;
+	if (me->skill[attackNum].count < 0)me->skill[attackNum].count = 0;	//ƒ}ƒCƒiƒX‚ð–h‚®
+	messageflag = true;
+	setMessage(s);
+	outMessage();
 }
 
 
@@ -822,6 +823,7 @@ bool life(pokemon* enemy, pokemon* me) {
 		enemy->isLive = false;
 		return TRUE;
 	}
+	return FALSE;
 }
 
 
