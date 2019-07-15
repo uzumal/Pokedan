@@ -67,11 +67,14 @@ void outMessage();								//メッセージを表示する
 bool isNearPokemon(pokemon*, pokemon*);			//敵が近くにいたら(攻撃圏内にいたら)true
 bool findPokemon(pokemon*, pokemon*);
 bool life(pokemon* enemy, pokemon* me);						//敵死んでいるかどうか
-void enemyMove(pokemon*,int);						//敵の動き
+void enemyMove(pokemon*, int);						//敵の動き
 int getRandom(int,int);
 void wait(int,char* s);
 void wait(int);
-
+void charaMove(pokemon*, int, int, int);
+void charaMove(pokemon*,pokemon*, int, int, int);
+void mapMove(map*,pokemon*,pokemon*, int, int, int);
+void setDirection(pokemon*, int);
 /*キーが押されているフレーム数によって表示する画像を変更する*/
 /*
 int getDnum(int key) {
@@ -126,9 +129,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	int d_num = 0;
 	int tempTime = 0;
-	int floor = 0;
 	int nearCell[9];
 	int enemyCell = 0;
+
+	int floor = 0;
 
 	/*白色を格納*/
 	const int white = GetColor(255, 255, 255);
@@ -166,6 +170,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		DrawFormatString(50	, 0, white, "Lv: %d",c->level);
 		DrawFormatString(120, 0, white, "HP: %d/ %d",c->hp,c->maxHp);
 		DrawFormatString(220, 0, white, "セットわざ名 : %s",c->skill[c->attackNum].name);
+
 		/*確認用座標(あとで消す)*/
 		DrawFormatString(500, 0, white, "ピカ座標(%d,%d)", c->x + 20 - m->x * CHIP_SIZE, c->y + 20 - m->y * CHIP_SIZE);
 		DrawFormatString(500, 20, white, "ダー座標(%d,%d)", d->x + 20 - m->x * CHIP_SIZE, d->y + 20 - m->y*CHIP_SIZE);
@@ -239,201 +244,167 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		/*Right*/
 		if (!menuflag && keyState[KEY_INPUT_D]==1) {
-			c->direction = RIGHT;
-			if(nearCell[RIGHT]>0){
-				if (c->x == MAP_WIDTH) { 
-					m->x--;
-					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0)d->x-=CHIP_SIZE;
-				}
-				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
-					c->x += CHIP_SIZE;
-					if (c->x == d->x && c->y == d->y) { d->x = c->x- CHIP_SIZE; d->direction = RIGHT;}
-					enemyMove(d, floor);
-				}
+			if (c->x == MAP_WIDTH) { 
+				mapMove(m, c, d, -1, 0,floor);
+			}
+			else {
+				charaMove(c,d,1,0,floor);
+				if (!keyState[KEY_INPUT_Y])enemyMove(d, floor);
 			}
 		}
 
 		/*Left*/
 		else if (!menuflag && keyState[KEY_INPUT_A]==1) { 
-			c->direction = LEFT;
-			if(nearCell[LEFT]>0){
-				if (c->x == CHIP_SIZE * 2 && m->x != 0) {
-					m->x++;
-					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0)d->x+=CHIP_SIZE;
-				}
-				else if (!(keyState[KEY_INPUT_Y])  || !d->isLive) {
-					c->x -= CHIP_SIZE;
-					if (c->x == d->x && c->y == d->y) { d->x = c->x + CHIP_SIZE; d->direction = LEFT;}
-					enemyMove(d, floor);
-				}
+			if (c->x == CHIP_SIZE * 2 && m->x != 0) {
+				mapMove(m, c, d, 1, 0, floor);
 			}
+			else  {
+				charaMove(c,d, -1, 0,floor);
+				if (!keyState[KEY_INPUT_Y])enemyMove(d, floor);
+			}
+			
 		}
 
 		/*Up*/
 		else if (!menuflag && keyState[KEY_INPUT_W]==1) {
-			c->direction = UP;
-			if (nearCell[UP]>0) {
-				if (c->y == CHIP_SIZE * 2 && m->y != 0) { 
-					m->y++;
-					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0)d->y+=CHIP_SIZE;
-				}
-				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
-					c->y -= CHIP_SIZE;
-					if (c->x == d->x && c->y == d->y) { d->y = c->y + CHIP_SIZE; d->direction = UP;}
-					enemyMove(d, floor);
-				}
+			if (c->y == CHIP_SIZE * 2 && m->y != 0) { 
+				mapMove(m, c, d, 0, 1,floor);
 			}
+			else {
+				charaMove(c,d, 0, -1,floor);
+				if (!keyState[KEY_INPUT_Y])enemyMove(d, floor);
+			}
+			
 		}
 
 		/*Down*/
 		else if (!menuflag && keyState[KEY_INPUT_X]==1) {
-			c->direction = DOWN;
-			if (nearCell[DOWN] > 0) {
-				if (c->y == MAP_HEIGHT){
-					m->y--;
-					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0)d->y-=CHIP_SIZE;
-				}
-				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
-					c->y += CHIP_SIZE;
-					if (c->x == d->x && c->y == d->y) { d->y = c->y - CHIP_SIZE; d->direction = DOWN;}
-					enemyMove(d, floor);
-				}
+			if (c->y == MAP_HEIGHT){
+				mapMove(m, c, d, 0, -1,floor);
+			}
+			else {
+				charaMove(c,d, 0, 1,floor);
+				if(!keyState[KEY_INPUT_Y])enemyMove(d, floor);
 			}
 		}
 
 		/*RightUp*/
 		else if (!menuflag && keyState[KEY_INPUT_E] == 1) {
-			c->direction = UP;
-			if (nearCell[RIGHT_UP] > 0) {
-				if (c->y == CHIP_SIZE * 2 && c->x == MAP_WIDTH) { //右上端の場合
-					if (m->y == 0) {							  //マップがこれ以上上に行けない場合
-						m->x--;
-						c->y-=CHIP_SIZE;
-						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) {d->x-=CHIP_SIZE;}
-					}
-					else {
-						m->y++; m->x--;
-						if (mapping[floor][d->y / CHIP_SIZE - m->y][c->x / CHIP_SIZE - m->x] <= 0) { d->x-=CHIP_SIZE; d->y+=CHIP_SIZE;}
-					}
+			if (c->y == CHIP_SIZE * 2 && c->x == MAP_WIDTH) { //右上端の場合
+				if (m->y == 0) {							  //マップがこれ以上上に行けない場合
+					mapMove(m, c, d, 1, 0, floor);
+					charaMove(c, d, 0, -1, floor);
 				}
-				else if (c->y == CHIP_SIZE * 2) {			//右端ではないが上端の場合
-					if (m->y != 0) {
-						m->y++;
-						c->x+=CHIP_SIZE;
-						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->y += CHIP_SIZE; }
-					}
+				else {
+					mapMove(m, c, d, -1, 1, floor);
 				}
-				else if (c->x == MAP_WIDTH){				//上端ではないが右端の場合
-					m->x--;
-					c->y-=CHIP_SIZE;
-					if (mapping[floor][d->y / CHIP_SIZE - m->y][c->x / CHIP_SIZE - m->x] <= 0) { d->x -= CHIP_SIZE; }
+			}
+			else if (c->y == CHIP_SIZE * 2) {			//右端ではないが上端の場合
+				if (m->y != 0) {
+					mapMove(m, c, d, 0, 1, floor);
+					charaMove(c, d, 1, 0, floor);
 				}
-				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {	//マップの端でない場合、yを押していないと普通に移動
-					c->y-=CHIP_SIZE; c->x+=CHIP_SIZE;
-					if (c->x == d->x && c->y == d->y) { d->x = c->x - CHIP_SIZE; d->y = c->y + CHIP_SIZE; d->direction = UP; }
-					enemyMove(d, floor);
+				else {
+					charaMove(c, d, 1, 0, floor);
 				}
+			}
+			else if (c->x == MAP_WIDTH){				//上端ではないが右端の場合
+				mapMove(m,c,d,-1,0,floor);
+				charaMove(c, d, 0, -1, floor);
+			}
+			else  {										//マップの端でない場合、yを押していないと普通に移動
+				charaMove(c, d, 1, -1,floor);
+				if(!keyState[KEY_INPUT_Y])enemyMove(d, floor);
 			}
 		}
 		/*RightDown*/
 		else if (!menuflag && keyState[KEY_INPUT_C] == 1) {
-			c->direction = DOWN;
-			if (nearCell[RIGHT_DOWN] > 0) {						//自分の右下が障害物でない場合
-				if (c->y == MAP_HEIGHT && c->x == MAP_WIDTH) {	//マップの右下端であれば
-					m->x--; m->y--; 
-					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x-=CHIP_SIZE; d->y-=CHIP_SIZE; }
-				}
-				else if (c->y == MAP_HEIGHT) {					//右端ではないが下端である場合
-					m->y--;
-					c->x+=CHIP_SIZE;
-					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) {d->y -= CHIP_SIZE; }
-				}
-				else if (c->x == MAP_WIDTH) {					//下端ではないが右端である場合
-					m->x--;
-					c->y+=CHIP_SIZE;
-					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) {d->x -= CHIP_SIZE;}
-				}
-				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
-					c->y+=CHIP_SIZE; c->x+=CHIP_SIZE;
-					if (c->x == d->x && c->y == d->y) { d->x = c->x - CHIP_SIZE; d->y = c->y - CHIP_SIZE; d->direction = DOWN;}
-					enemyMove(d, floor);
-				}
+			
+			if (c->y == MAP_HEIGHT && c->x == MAP_WIDTH) {	//マップの右下端であれば
+				mapMove(m, c, d, -1, -1, floor);
 			}
+			else if (c->y == MAP_HEIGHT) {					//右端ではないが下端である場合
+				mapMove(m, c, d, 0, -1, floor);
+				charaMove(c, d, 1, 0, floor);
+			}
+			else if (c->x == MAP_WIDTH) {					//下端ではないが右端である場合
+				mapMove(m, c, d, -1, 0, floor);
+				charaMove(c, d, 0, 1, floor);
+			}
+			else {
+				charaMove(c, d, 1, 1, floor);
+				if(!keyState[KEY_INPUT_Y])enemyMove(d, floor);
+			}
+			
 		}
 
 		/*LeftUp*/
 		else if (!menuflag && keyState[KEY_INPUT_Q] == 1) {		//メニューを開いておらず、Qキーを押すと
-			c->direction = UP;
-			if (nearCell[LEFT_UP] > 0) {
-				if (c->y == CHIP_SIZE * 2 && c->x == CHIP_SIZE * 2) {		//左上端にいる場合
-					if (m->y == 0) {							//マップがこれ以上上に行けない場合
-						m->x++;
-						m->y--;
-						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x+=CHIP_SIZE; }
-					}
-					else if (m->x == 0) {						//マップがこれ以上左に行けない場合 
-						m->y++;
-						c->x-=CHIP_SIZE;
-						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->y+=CHIP_SIZE; }
-					}
-					else {										//マップがこれ以上上にも左にも行けない場合
-						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x+=CHIP_SIZE; d->y+=CHIP_SIZE; }
-					}
+			if (c->y == CHIP_SIZE * 2 && c->x == CHIP_SIZE * 2) {		//左上端にいる場合
+				if (m->y == 0) {							//マップがこれ以上上に行けない場合
+					mapMove(m, c, d, 1, 0, floor);
 				}
-				else if (c->y == CHIP_SIZE * 2) {							//左端ではないが上端にいる場合
-					if (m->y != 0) {							//マップがまだ上に行ける場合
-						m->y++;
-						c->x-=CHIP_SIZE;
-						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->y += CHIP_SIZE; }
-					}
+				else if (m->x == 0) {						//マップがこれ以上左に行けない場合 
+					mapMove(m, c, d, 0, 1, floor);
 				}
-				else if (c->x == CHIP_SIZE * 2) {							//上端ではないが左端にいる場合
-					if (m->x != 0) {							//マップがまだ左に行ける場合
-						m->x++;
-						c->y-=CHIP_SIZE;
-						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x += CHIP_SIZE; }
-					}
+				else if (m->y == 0 && m->x == 0) {			//マップがこれ以上上にも左にも行けない場合
+					//何もしない
+				} 
+				else {
+					mapMove(m, c, d, 1, 1, floor);
 				}
-				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
-					c->y-=CHIP_SIZE; c->x-=CHIP_SIZE;
-					if (c->x == d->x && c->y == d->y) { d->x = c->x + CHIP_SIZE; d->y = c->y + CHIP_SIZE; d->direction = UP;}
-					enemyMove(d, floor);
+			}
+			else if (c->y == CHIP_SIZE * 2) {							//左端ではないが上端にいる場合		
+				if (m->y != 0) {							//マップがまだ上に行ける場合
+					mapMove(m, c, d, 0, 1, floor);
+					charaMove(c, d, -1, 0,floor);
 				}
+				else {
+					charaMove(c, d, -1, 0, floor);
+				}
+			}
+			else if (c->x == CHIP_SIZE * 2) {							//上端ではないが左端にいる場合
+				if (m->x != 0) {							//マップがまだ左に行ける場合
+					mapMove(m, c, d, 1, 0, floor);
+					charaMove(c,d,0,-1,floor);
+				}
+				else {
+					charaMove(c, d, 0, -1, floor);
+				}
+			}
+			else {
+				charaMove(c, d, -1, -1, floor);
+				if(!keyState[KEY_INPUT_Y])enemyMove(d, floor);
 			}
 		}
 
 		/*LeftDown*/
 		else if (!menuflag && keyState[KEY_INPUT_Z] == 1) {
-			c->direction = DOWN;
-			if (nearCell[LEFT_DOWN] > 0) {
-				if (c->y ==  MAP_HEIGHT && c->x == CHIP_SIZE * 2) {				//マップの左下端にいる場合
-					if (m->x == 0) {											//マップがこれ以上左に行けない場合
-						m->y--;
-						c->x-=CHIP_SIZE;
-						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->y-=CHIP_SIZE; }
-					}
-					else {
-						m->x++; m->y--;
-						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x+=CHIP_SIZE; d->y-=CHIP_SIZE; }
-					}
+			if (c->y ==  MAP_HEIGHT && c->x == CHIP_SIZE * 2) {				//マップの左下端にいる場合
+				if (m->x == 0) {											//マップがこれ以上左に行けない場合
+					mapMove(m, c, d, 0, -1, floor);
+					charaMove(c, d, -1, 0, floor);
 				}
-				else if (c->y == MAP_HEIGHT) {									//マップの左端でないが下端にいる場合
-					m->y--;
-					c->x-=CHIP_SIZE;
-					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->y -= CHIP_SIZE; }
+				else {
+					mapMove(m, c, d, 1, -1, floor);
 				}
-				else if (c->x == CHIP_SIZE * 2) {								//マップの下端でないが左端にいる場合
-					if (m->x != 0) {											//マップがまだ左に行ける場合
-						m->x++;
-						c->y+=CHIP_SIZE;
-						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x += CHIP_SIZE; }
-					}
+			}
+			else if (c->y == MAP_HEIGHT) {									//マップの左端でないが下端にいる場合
+				mapMove(m, c, d, 0, -1, floor);
+				charaMove(c, d, -1, 0, floor);
+			}
+			else if (c->x == CHIP_SIZE * 2) {								//マップの下端でないが左端にいる場合
+				if (m->x != 0) {											//マップがまだ左に行ける場合
+					mapMove(m, c, d, 1, 0, floor);
+					charaMove(c, d, 0, 1,floor);
 				}
-				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
-					c->y+=CHIP_SIZE; c->x-=CHIP_SIZE;
-					if (c->x == d->x && c->y == d->y) { d->x = c->x + CHIP_SIZE; d->y = c->y - CHIP_SIZE; d->direction = DOWN; }
-					enemyMove(d, floor);
+				else {
+					charaMove(c, d, 0, 1, floor);
 				}
+			}
+			else {
+				charaMove(c, d, -1, 1, floor);
+				if(!keyState[KEY_INPUT_Y])enemyMove(d, floor);
 			}
 		}
 
@@ -836,63 +807,35 @@ bool life(pokemon* enemy, pokemon* me) {
 /*敵の動き*/
 void enemyMove(pokemon* enemy,int floor) {
 
-	int nearCell[9];
-	
-	nearCell[RIGHT]		= mapping[floor][enemy->y / CHIP_SIZE - m->y][(enemy->x + CHIP_SIZE) / CHIP_SIZE - m->x];
-	nearCell[LEFT]		= mapping[floor][enemy->y / CHIP_SIZE - m->y][(enemy->x - CHIP_SIZE) / CHIP_SIZE - m->x];
-	nearCell[UP]		= mapping[floor][(enemy->y - CHIP_SIZE) / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
-	nearCell[DOWN]		= mapping[floor][(enemy->y + CHIP_SIZE) / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
-	
-	nearCell[RIGHT_UP]	= mapping[floor][(enemy->y - CHIP_SIZE) / CHIP_SIZE - m->y][(enemy->x + CHIP_SIZE) / CHIP_SIZE - m->x];
-	nearCell[RIGHT_DOWN]= mapping[floor][(enemy->y + CHIP_SIZE) / CHIP_SIZE - m->y][(enemy->x + CHIP_SIZE) / CHIP_SIZE - m->x];
-	nearCell[LEFT_UP]	= mapping[floor][(enemy->y - CHIP_SIZE) / CHIP_SIZE - m->y][(enemy->x - CHIP_SIZE) / CHIP_SIZE - m->x];
-	nearCell[LEFT_DOWN]	= mapping[floor][(enemy->y + CHIP_SIZE) / CHIP_SIZE - m->y][(enemy->x - CHIP_SIZE) / CHIP_SIZE - m->x];
-
-	nearCell[CENTER]	= mapping[floor][enemy->y / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
 	/*敵が同じマップ内にいると、自分に向かってくる*/
 	if (findPokemon(enemy, c)) {
 		/*攻撃しない*/
-		/*移動処理*/
+		/*移動処理(A*アルゴリズムを後に使用)*/
 		if (!isNearPokemon(enemy, c) && enemy->isLive) {
-			if (c->x != enemy->x && c->x + CHIP_SIZE < enemy->x) {
-				enemy->direction = LEFT;
-				if (!(c->x == MAP_WIDTH)) {
-					if (nearCell[LEFT] > 0) enemy->x -= CHIP_SIZE;
-				}
-			}
-			else if (c->x != enemy->x && c->x + CHIP_SIZE > enemy->x) {
-				enemy->direction = RIGHT;
-				if (!(c->x != enemy->x && c->x - CHIP_SIZE < enemy->x)) {
-					if (nearCell[RIGHT] > 0 ) enemy->x += CHIP_SIZE;
-				}
-			}
-			else if (c->y != enemy->y && c->y - CHIP_SIZE < enemy->y) {
-				enemy->direction = UP;
-				if (!(c->y == CHIP_SIZE * 2 && m->y != 0)) {
-					if (nearCell[UP] > 0) enemy->y -= CHIP_SIZE;
-				}
-			}
-			else if (c->y != enemy->y && c->y + CHIP_SIZE > enemy->y) {
-				enemy->direction = DOWN;
-				if (!(c->y == MAP_HEIGHT)) {					//マップ動いた時用
-					if (nearCell[DOWN] > 0 ) enemy->y += CHIP_SIZE;
-				}
-			}
-			else if (c->x != enemy->x && c->y != enemy->y &&c->x < enemy->x && c->y < enemy->y) {
-				enemy->direction = UP;
-				if (nearCell[LEFT_UP] > 0) { enemy->y -= CHIP_SIZE; enemy->x -= CHIP_SIZE; }
+
+			if (c->x != enemy->x && c->y != enemy->y && c->x < enemy->x && c->y < enemy->y) {
+				charaMove(d, -1, -1,floor);
 			}
 			else if (c->x != enemy->x && c->y != enemy->y && c->x < enemy->x && c->y > enemy->y) {
-				enemy->direction = DOWN;
-				if (nearCell[LEFT_DOWN] > 0) { enemy->y += CHIP_SIZE; enemy->x -= CHIP_SIZE; }
+				charaMove(d, -1, 1,floor);
 			}
 			else if (c->x != enemy->x && c->y != enemy->y && c->x > enemy->x && c->y < enemy->y) {
-				enemy->direction = UP;
-				if (nearCell[RIGHT_UP] > 0) { enemy->y -= CHIP_SIZE; enemy->x += CHIP_SIZE; }
+				charaMove(d, 1, -1,floor);
 			}
 			else if (c->x != enemy->x && c->y != enemy->y && c->x > enemy->x && c->y > enemy->y) {
-				enemy->direction = DOWN;
-				if (nearCell[RIGHT_DOWN] > 0) { enemy->y += CHIP_SIZE; enemy->x += CHIP_SIZE; }
+				charaMove(d, 1, 1,floor);
+			}
+			else if (c->x != enemy->x && c->x < enemy->x) {
+				charaMove(d, -1, 0,floor);
+			}
+			else if (c->x != enemy->x && c->x > enemy->x) {
+				charaMove(d, 1, 0,floor);
+			}
+			else if (c->y != enemy->y && c->y < enemy->y) {
+				charaMove(d, 0, -1,floor);
+			}
+			else if (c->y != enemy->y && c->y > enemy->y) {
+				charaMove(d, 0, 1,floor);
 			}
 		}
 		/*攻撃する*/
@@ -905,36 +848,28 @@ void enemyMove(pokemon* enemy,int floor) {
 	else {
 		switch (getRandom(0,8)) {
 		case LEFT:
-			if (nearCell[LEFT] > 0)enemy->x -= CHIP_SIZE;
-			enemy->direction = LEFT;
+			charaMove(enemy, -1, 0,floor);
 			break;
 		case RIGHT:
-			if(nearCell[RIGHT] > 0)enemy->x += CHIP_SIZE;
-			enemy->direction = RIGHT;
+			charaMove(enemy, 1, 0,floor);
 			break;
 		case UP:
-			if(nearCell[UP] > 0)enemy->y -= CHIP_SIZE;
-			enemy->direction = UP;
+			charaMove(enemy, 0, -1,floor);
 			break;
 		case DOWN:
-			if(nearCell[DOWN]>0)enemy->y += CHIP_SIZE;
-			enemy->direction = DOWN;
+			charaMove(enemy, 0, 1,floor);
 			break;
 		case LEFT_UP:
-			if (nearCell[LEFT_UP] > 0) { enemy->x -= CHIP_SIZE; enemy->y -= CHIP_SIZE; }
-			enemy->direction = UP;
+			charaMove(enemy, -1, -1,floor);
 			break;
 		case LEFT_DOWN:
-			if (nearCell[LEFT_DOWN] > 0) { enemy->x -= CHIP_SIZE; enemy->y += CHIP_SIZE; }
-			enemy->direction = DOWN;
+			charaMove(enemy, -1, 1,floor);
 			break;
 		case RIGHT_UP:
-			if (nearCell[RIGHT_UP] > 0) { enemy->x += CHIP_SIZE; enemy->y -= CHIP_SIZE; }
-			enemy->direction = UP;
+			charaMove(enemy, 1, -1,floor);
 			break;
 		case RIGHT_DOWN:
-			if (nearCell[RIGHT_DOWN] > 0) { enemy->x += CHIP_SIZE; enemy->y += CHIP_SIZE; }
-			enemy->direction = DOWN;
+			charaMove(enemy, 1, 1,floor);
 			break;
 		default:
 			break;
@@ -953,4 +888,98 @@ int getRandom(int min,int max) {
 	std::uniform_int_distribution<int> dice(min, max);
 
 	return dice(mt);
+}
+
+/*自分用の処理*/
+void charaMove(pokemon* me,pokemon* enemy, int x, int y,int floor) {
+
+	if (x == 1)setDirection(me,RIGHT);
+	else if(x == -1)setDirection(me,LEFT);
+
+	if (y == 1)setDirection(me,DOWN);
+	else if(y == -1)setDirection(me,UP);
+
+	/*移動先のセル確認*/
+	int nextCell = mapping[floor][me->y / CHIP_SIZE - m->y + y][me->x  / CHIP_SIZE - m->x + x];
+
+	/*ななめ移動のとき*/
+	if ((x == 1 || x == -1) && (y == 1 || y == -1)) {
+
+		int nextCell_x = mapping[floor][me->y / CHIP_SIZE - m->y][me->x / CHIP_SIZE - m->x + x];	//自分の左右どちらかのセルの状態
+		int nextCell_y = mapping[floor][me->y / CHIP_SIZE - m->y + y][me->x / CHIP_SIZE - m->x];	//自分の上下どちらかのセルの状態
+
+		//進む先が障害物なら
+		if (nextCell <= 0 && !keyState[KEY_INPUT_Y]) {
+			if (nextCell_x > 0 && nextCell_y <=0)me->x += x * CHIP_SIZE;
+			if (nextCell_y > 0 && nextCell_x <=0)me->y += y * CHIP_SIZE;
+		}
+	}
+
+	if (nextCell > 0 && !keyState[KEY_INPUT_Y]) {
+		/*移動先に敵がいたら入れ替わる*/
+		if (me->x + x * CHIP_SIZE == enemy->x && me->y + y * CHIP_SIZE == enemy->y) { enemy->x = me->x; enemy->y = me->y; }
+		me->x += x * CHIP_SIZE;
+		me->y += y * CHIP_SIZE;
+	}
+}
+
+/*敵用の処理,入れ替わり処理を無くした*/
+void charaMove(pokemon* me, int x, int y, int floor) {
+
+	if (x == 1)setDirection(me, RIGHT);
+	else if (x == -1)setDirection(me, LEFT);
+
+	if (y == 1)setDirection(me, DOWN);
+	else if (y == -1)setDirection(me, UP);
+
+	/*移動先のセル確認*/
+	int nextCell = mapping[floor][me->y / CHIP_SIZE - m->y + y][me->x / CHIP_SIZE - m->x + x];
+
+
+	if (nextCell > 0) {
+		me->x += x * CHIP_SIZE;
+		me->y += y * CHIP_SIZE;
+	}
+}
+
+void mapMove(map* m,pokemon* me,pokemon* enemy, int x, int y, int floor) {
+
+	if (x == -1)setDirection(me,RIGHT);
+	else if(x == 1)setDirection(me,LEFT);
+
+	if (y == -1)setDirection(me,DOWN);
+	else if(y == 1)setDirection(me,UP);
+
+	int nextCell = mapping[floor][me->y / CHIP_SIZE - m->y - y][me->x  / CHIP_SIZE - m->x - x];
+	
+	//マップがななめに移動するとき
+	if ((x == 1 || x == -1) && (y == 1 || y == -1)) {
+		int nextCell_x = mapping[floor][me->y / CHIP_SIZE - m->y][me->x / CHIP_SIZE - m->x - x];
+		int nextCell_y = mapping[floor][me->y / CHIP_SIZE - m->y - y][me->x / CHIP_SIZE - m->x];
+
+		if (nextCell <= 0 && !keyState[KEY_INPUT_Y]) {
+			if (nextCell_x > 0) { 
+				m->x += x;
+				int enemyCell = mapping[floor][enemy->y / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
+				if (enemyCell <= 0)charaMove(enemy, x, 0, floor);
+			}
+			if (nextCell_y > 0) { 
+				m->y += y; 
+				int enemyCell = mapping[floor][enemy->y / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
+				if (enemyCell <= 0)charaMove(enemy, 0, y, floor);
+			}
+		}
+	}
+
+	if (nextCell > 0 && !keyState[KEY_INPUT_Y]) {
+		m->x += x;
+		m->y += y;
+		int enemyCell = mapping[floor][enemy->y / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
+		if (enemyCell <= 0)charaMove(enemy,x,y,floor);
+	}
+
+}
+
+void setDirection(pokemon* me, int direction) {
+	me->direction = direction;
 }
