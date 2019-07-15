@@ -301,9 +301,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		else if (!menuflag && keyState[KEY_INPUT_E] == 1) {
 			c->direction = UP;
 			if (nearCell[RIGHT_UP] > 0) {
-				if (c->y == CHIP_SIZE * 2 && c->x == MAP_WIDTH) { 
-					if (m->y == 0) {
+				if (c->y == CHIP_SIZE * 2 && c->x == MAP_WIDTH) { //右上端の場合
+					if (m->y == 0) {							  //マップがこれ以上上に行けない場合
 						m->x--;
+						c->y-=CHIP_SIZE;
 						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) {d->x-=CHIP_SIZE;}
 					}
 					else {
@@ -311,17 +312,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						if (mapping[floor][d->y / CHIP_SIZE - m->y][c->x / CHIP_SIZE - m->x] <= 0) { d->x-=CHIP_SIZE; d->y+=CHIP_SIZE;}
 					}
 				}
-				else if (c->y == CHIP_SIZE * 2) {
+				else if (c->y == CHIP_SIZE * 2) {			//右端ではないが上端の場合
 					if (m->y != 0) {
 						m->y++;
+						c->x+=CHIP_SIZE;
 						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->y += CHIP_SIZE; }
 					}
 				}
-				else if (c->x == MAP_WIDTH){
+				else if (c->x == MAP_WIDTH){				//上端ではないが右端の場合
 					m->x--;
+					c->y-=CHIP_SIZE;
 					if (mapping[floor][d->y / CHIP_SIZE - m->y][c->x / CHIP_SIZE - m->x] <= 0) { d->x -= CHIP_SIZE; }
 				}
-				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
+				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {	//マップの端でない場合、yを押していないと普通に移動
 					c->y-=CHIP_SIZE; c->x+=CHIP_SIZE;
 					if (c->x == d->x && c->y == d->y) { d->x = c->x - CHIP_SIZE; d->y = c->y + CHIP_SIZE; d->direction = UP; }
 					enemyMove(d, floor);
@@ -331,17 +334,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/*RightDown*/
 		else if (!menuflag && keyState[KEY_INPUT_C] == 1) {
 			c->direction = DOWN;
-			if (nearCell[RIGHT_DOWN] > 0) {
-				if (c->y == MAP_HEIGHT && c->x == MAP_WIDTH) { 
+			if (nearCell[RIGHT_DOWN] > 0) {						//自分の右下が障害物でない場合
+				if (c->y == MAP_HEIGHT && c->x == MAP_WIDTH) {	//マップの右下端であれば
 					m->x--; m->y--; 
 					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x-=CHIP_SIZE; d->y-=CHIP_SIZE; }
 				}
-				else if (c->y == MAP_HEIGHT) {
+				else if (c->y == MAP_HEIGHT) {					//右端ではないが下端である場合
 					m->y--;
+					c->x+=CHIP_SIZE;
 					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) {d->y -= CHIP_SIZE; }
 				}
-				else if (c->x == MAP_WIDTH) {
+				else if (c->x == MAP_WIDTH) {					//下端ではないが右端である場合
 					m->x--;
+					c->y+=CHIP_SIZE;
 					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) {d->x -= CHIP_SIZE;}
 				}
 				else if (!(keyState[KEY_INPUT_Y]) || !d->isLive) {
@@ -353,31 +358,35 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 		/*LeftUp*/
-		else if (!menuflag && keyState[KEY_INPUT_Q] == 1) {
+		else if (!menuflag && keyState[KEY_INPUT_Q] == 1) {		//メニューを開いておらず、Qキーを押すと
 			c->direction = UP;
 			if (nearCell[LEFT_UP] > 0) {
-				if (c->y == CHIP_SIZE * 2 && c->x == CHIP_SIZE * 2) { 
-					if (m->y == 0) {
+				if (c->y == CHIP_SIZE * 2 && c->x == CHIP_SIZE * 2) {		//左上端にいる場合
+					if (m->y == 0) {							//マップがこれ以上上に行けない場合
 						m->x++;
+						m->y--;
 						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x+=CHIP_SIZE; }
 					}
-					else if (m->x == 0) { 
-						m->y++; 
+					else if (m->x == 0) {						//マップがこれ以上左に行けない場合 
+						m->y++;
+						c->x-=CHIP_SIZE;
 						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->y+=CHIP_SIZE; }
 					}
-					else {
+					else {										//マップがこれ以上上にも左にも行けない場合
 						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x+=CHIP_SIZE; d->y+=CHIP_SIZE; }
 					}
 				}
-				else if (c->y == CHIP_SIZE * 2) {
-					if (m->y != 0) {
+				else if (c->y == CHIP_SIZE * 2) {							//左端ではないが上端にいる場合
+					if (m->y != 0) {							//マップがまだ上に行ける場合
 						m->y++;
+						c->x-=CHIP_SIZE;
 						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->y += CHIP_SIZE; }
 					}
 				}
-				else if (c->x == CHIP_SIZE * 2) {
-					if (m->x != 0) {
+				else if (c->x == CHIP_SIZE * 2) {							//上端ではないが左端にいる場合
+					if (m->x != 0) {							//マップがまだ左に行ける場合
 						m->x++;
+						c->y-=CHIP_SIZE;
 						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x += CHIP_SIZE; }
 					}
 				}
@@ -393,9 +402,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		else if (!menuflag && keyState[KEY_INPUT_Z] == 1) {
 			c->direction = DOWN;
 			if (nearCell[LEFT_DOWN] > 0) {
-				if (c->y ==  MAP_HEIGHT && c->x == CHIP_SIZE * 2) { 
-					if (m->x == 0) {
+				if (c->y ==  MAP_HEIGHT && c->x == CHIP_SIZE * 2) {				//マップの左下端にいる場合
+					if (m->x == 0) {											//マップがこれ以上左に行けない場合
 						m->y--;
+						c->x-=CHIP_SIZE;
 						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->y-=CHIP_SIZE; }
 					}
 					else {
@@ -403,13 +413,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x+=CHIP_SIZE; d->y-=CHIP_SIZE; }
 					}
 				}
-				else if (c->y == MAP_HEIGHT) {
+				else if (c->y == MAP_HEIGHT) {									//マップの左端でないが下端にいる場合
 					m->y--;
+					c->x-=CHIP_SIZE;
 					if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->y -= CHIP_SIZE; }
 				}
-				else if (c->x == CHIP_SIZE * 2) {
-					if (m->x != 0) {
+				else if (c->x == CHIP_SIZE * 2) {								//マップの下端でないが左端にいる場合
+					if (m->x != 0) {											//マップがまだ左に行ける場合
 						m->x++;
+						c->y+=CHIP_SIZE;
 						if (mapping[floor][d->y / CHIP_SIZE - m->y][d->x / CHIP_SIZE - m->x] <= 0) { d->x += CHIP_SIZE; }
 					}
 				}
