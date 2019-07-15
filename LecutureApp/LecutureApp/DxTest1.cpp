@@ -836,25 +836,23 @@ bool life(pokemon* enemy, pokemon* me) {
 /*“G‚Ì“®‚«*/
 void enemyMove(pokemon* enemy,int floor) {
 
+	int nearCell[9];
+	
+	nearCell[RIGHT]		= mapping[floor][enemy->y / CHIP_SIZE - m->y][(enemy->x + CHIP_SIZE) / CHIP_SIZE - m->x];
+	nearCell[LEFT]		= mapping[floor][enemy->y / CHIP_SIZE - m->y][(enemy->x - CHIP_SIZE) / CHIP_SIZE - m->x];
+	nearCell[UP]		= mapping[floor][(enemy->y - CHIP_SIZE) / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
+	nearCell[DOWN]		= mapping[floor][(enemy->y + CHIP_SIZE) / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
+	
+	nearCell[RIGHT_UP]	= mapping[floor][(enemy->y - CHIP_SIZE) / CHIP_SIZE - m->y][(enemy->x + CHIP_SIZE) / CHIP_SIZE - m->x];
+	nearCell[RIGHT_DOWN]= mapping[floor][(enemy->y + CHIP_SIZE) / CHIP_SIZE - m->y][(enemy->x + CHIP_SIZE) / CHIP_SIZE - m->x];
+	nearCell[LEFT_UP]	= mapping[floor][(enemy->y - CHIP_SIZE) / CHIP_SIZE - m->y][(enemy->x - CHIP_SIZE) / CHIP_SIZE - m->x];
+	nearCell[LEFT_DOWN]	= mapping[floor][(enemy->y + CHIP_SIZE) / CHIP_SIZE - m->y][(enemy->x - CHIP_SIZE) / CHIP_SIZE - m->x];
+
+	nearCell[CENTER]	= mapping[floor][enemy->y / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
 	/*“G‚ª“¯‚¶ƒ}ƒbƒv“à‚É‚¢‚é‚ÆAŽ©•ª‚ÉŒü‚©‚Á‚Ä‚­‚é*/
 	if (findPokemon(enemy, c)) {
 		/*UŒ‚‚µ‚È‚¢*/
 		/*ˆÚ“®ˆ—*/
-		int nearCell[9];
-
-		nearCell[RIGHT]		= mapping[floor][enemy->y / CHIP_SIZE - m->y][(enemy->x + CHIP_SIZE) / CHIP_SIZE - m->x];
-		nearCell[LEFT]		= mapping[floor][enemy->y / CHIP_SIZE - m->y][(enemy->x - CHIP_SIZE) / CHIP_SIZE - m->x];
-		nearCell[UP]		= mapping[floor][(enemy->y - CHIP_SIZE) / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
-		nearCell[DOWN]		= mapping[floor][(enemy->y + CHIP_SIZE) / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
-
-		nearCell[RIGHT_UP]	= mapping[floor][(enemy->y - CHIP_SIZE) / CHIP_SIZE - m->y][(enemy->x + CHIP_SIZE) / CHIP_SIZE - m->x];
-		nearCell[RIGHT_DOWN]= mapping[floor][(enemy->y + CHIP_SIZE) / CHIP_SIZE - m->y][(enemy->x + CHIP_SIZE) / CHIP_SIZE - m->x];
-		nearCell[LEFT_UP]	= mapping[floor][(enemy->y - CHIP_SIZE) / CHIP_SIZE - m->y][(enemy->x - CHIP_SIZE) / CHIP_SIZE - m->x];
-		nearCell[LEFT_DOWN]	= mapping[floor][(enemy->y + CHIP_SIZE) / CHIP_SIZE - m->y][(enemy->x - CHIP_SIZE) / CHIP_SIZE - m->x];
-
-		nearCell[CENTER]	= mapping[floor][enemy->y / CHIP_SIZE - m->y][enemy->x / CHIP_SIZE - m->x];
-		
-
 		if (!isNearPokemon(enemy, c) && enemy->isLive) {
 			if (c->x != enemy->x && c->x + CHIP_SIZE < enemy->x) {
 				enemy->direction = LEFT;
@@ -905,22 +903,40 @@ void enemyMove(pokemon* enemy,int floor) {
 	}
 	/*‚Ü‚¾Ž©•ª‚ªŒ©‚Â‚©‚Á‚Ä‚¢‚È‚¢ê‡A‚¤‚ë‚¤‚ë‚·‚é*/
 	else {
-		switch (getRandom(0,3)) {
-		case 0:
-			enemy->x -= CHIP_SIZE;
+		switch (getRandom(0,8)) {
+		case LEFT:
+			if (nearCell[LEFT] > 0)enemy->x -= CHIP_SIZE;
 			enemy->direction = LEFT;
 			break;
-		case 1:
-			enemy->x += CHIP_SIZE;
+		case RIGHT:
+			if(nearCell[RIGHT] > 0)enemy->x += CHIP_SIZE;
 			enemy->direction = RIGHT;
 			break;
-		case 2:
-			enemy->y -= CHIP_SIZE;
+		case UP:
+			if(nearCell[UP] > 0)enemy->y -= CHIP_SIZE;
 			enemy->direction = UP;
 			break;
-		case 3:
-			enemy->y += CHIP_SIZE;
+		case DOWN:
+			if(nearCell[DOWN]>0)enemy->y += CHIP_SIZE;
 			enemy->direction = DOWN;
+			break;
+		case LEFT_UP:
+			if (nearCell[LEFT_UP] > 0) { enemy->x -= CHIP_SIZE; enemy->y -= CHIP_SIZE; }
+			enemy->direction = UP;
+			break;
+		case LEFT_DOWN:
+			if (nearCell[LEFT_DOWN] > 0) { enemy->x -= CHIP_SIZE; enemy->y += CHIP_SIZE; }
+			enemy->direction = DOWN;
+			break;
+		case RIGHT_UP:
+			if (nearCell[RIGHT_UP] > 0) { enemy->x += CHIP_SIZE; enemy->y -= CHIP_SIZE; }
+			enemy->direction = UP;
+			break;
+		case RIGHT_DOWN:
+			if (nearCell[RIGHT_DOWN] > 0) { enemy->x += CHIP_SIZE; enemy->y += CHIP_SIZE; }
+			enemy->direction = DOWN;
+			break;
+		default:
 			break;
 		}
 	}
