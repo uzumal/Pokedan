@@ -51,6 +51,7 @@ int messageBox;
 int skillBox;
 int stairs_down;
 int stairs_up;
+int load;
 
 /*プロトタイプ宣言*/
 int init();
@@ -139,10 +140,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// while(裏画面を表画面に反映, メッセージ処理, 画面クリア,フレームカウント)
 	while (ScreenFlip() == 0 && ProcessMessage() == 0 && ClearDrawScreen() == 0 && getCountFrame() == 0) {
 
+		/*マップ全範囲走査*/
 		for (int x = m->x; x < SCREEN_WIDTH/CHIP_SIZE - m->x; x++) {
 			for (int y = m->y; y < SCREEN_HEIGHT/CHIP_SIZE - m->y; y++) {
 				if (mapping[floor][y][x] == 0)		 { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, white, "0"); }//DrawRotaGraph(x*CHIP_SIZE + 20, y*CHIP_SIZE + 20, 1.5,0,c->moveTexture[0][0],true); }
-				else if (mapping[floor][y][x] == 1)  { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, GetColor(255,0,0), "1"); }
+				else if (mapping[floor][y][x] == 1)  { DrawRotaGraph((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, 1,0,load,true); }
 				else if (mapping[floor][y][x] == 2)  { DrawRotaGraph((m->x + x) * CHIP_SIZE + 20   , (m->y + y) * CHIP_SIZE + 20, 1.5,0, d->moveTexture[0][0],true); }
 				else if (mapping[floor][y][x] == 3)  { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, GetColor(0, 0, 255), "B"); }
 				else if (mapping[floor][y][x] == 5)  { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, GetColor(0,0,255), "*"); }
@@ -221,9 +223,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		/*Attack*/
 		if (!menuflag && keyState[KEY_INPUT_J] == 1) {
+			//自分の近くにいれば
 			if (isNearPokemon(c, d) && d->isLive) {
 				attack(c, d, c->attackNum);
 			}
+			//近くにいない場合攻撃は外れる
 			else if (d->isLive) {
 				attack_for(c, c->attackNum);
 			}
@@ -578,6 +582,7 @@ int init() {
 	d->maxHp = 70;
 	d->hp = 70;
 
+	/*階段の画像*/
 	stairs_down = LoadGraph("画像/stairs.png");
 	stairs_up = LoadGraph("画像/stairs2.png");
 
@@ -600,6 +605,8 @@ int init() {
 	slap = LoadSoundMem("音楽/slap1.mp3");
 	bgm = LoadSoundMem("音楽/bgm.mp3");
 	down = LoadSoundMem("音楽/down1.mp3");
+
+	load = LoadGraph("画像/load.png");
 
 	return 0;
 }
@@ -669,7 +676,6 @@ void attack(pokemon* me, pokemon* enemy, int attackNum) {
 //プレイヤー攻撃用,敵が周りにおらず攻撃が必ず外れる場合
 void attack_for(pokemon* me, int attackNum) {
 
-	//斜め以外
 	if (me->skill[attackNum].count > 0) {
 
 		/*攻撃が外れる*/

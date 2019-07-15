@@ -1,6 +1,6 @@
 ﻿  DxTest1.cpp
-C:\Users\user\source\repos\Pokedan\LecutureApp\LecutureApp\DxTest1.cpp(449,30): warning C4312:  '型キャスト': 'int' からより大きいサイズの 'char *' へ変換します。
-C:\Users\user\source\repos\Pokedan\LecutureApp\LecutureApp\DxTest1.cpp(454,30): warning C4312:  '型キャスト': 'int' からより大きいサイズの 'char *' へ変換します。
+C:\Users\user\source\repos\Pokedan\LecutureApp\LecutureApp\DxTest1.cpp(453,30): warning C4312:  '型キャスト': 'int' からより大きいサイズの 'char *' へ変換します。
+C:\Users\user\source\repos\Pokedan\LecutureApp\LecutureApp\DxTest1.cpp(458,30): warning C4312:  '型キャスト': 'int' からより大きいサイズの 'char *' へ変換します。
   コード生成しています。
   2 of 49 functions ( 4.1%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
