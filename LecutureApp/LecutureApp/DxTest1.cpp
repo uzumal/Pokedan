@@ -291,25 +291,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/*RightUp*/
 		else if (!menuflag && keyState[KEY_INPUT_E] == 1) {
 			if (c->y == CHIP_SIZE * 2 && c->x == MAP_WIDTH) { //右上端の場合
-				if (m->y == 0) {							  //マップがこれ以上上に行けない場合
-					mapMove(m, c, d, 1, 0, floor);
-					charaMove(c, d, 0, -1, floor);
-				}
-				else {
-					mapMove(m, c, d, -1, 1, floor);
-				}
+				mapMove(m, c, d, -1, 1, floor);
 			}
 			else if (c->y == CHIP_SIZE * 2) {			//右端ではないが上端の場合
-				if (m->y != 0) {
-					mapMove(m, c, d, 0, 1, floor);
-					charaMove(c, d, 1, 0, floor);
-				}
-				else {
-					charaMove(c, d, 1, 0, floor);
-				}
+				mapMove(m, c, d, 0, 1, floor);
+				charaMove(c, d, 1, 0, floor);
 			}
 			else if (c->x == MAP_WIDTH){				//上端ではないが右端の場合
-				mapMove(m,c,d,-1,0,floor);
+				mapMove(m, c, d, -1, 0, floor);
 				charaMove(c, d, 0, -1, floor);
 			}
 			else  {										//マップの端でない場合、yを押していないと普通に移動
@@ -341,36 +330,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/*LeftUp*/
 		else if (!menuflag && keyState[KEY_INPUT_Q] == 1) {		//メニューを開いておらず、Qキーを押すと
 			if (c->y == CHIP_SIZE * 2 && c->x == CHIP_SIZE * 2) {		//左上端にいる場合
-				if (m->y == 0) {							//マップがこれ以上上に行けない場合
-					mapMove(m, c, d, 1, 0, floor);
-				}
-				else if (m->x == 0) {						//マップがこれ以上左に行けない場合 
-					mapMove(m, c, d, 0, 1, floor);
-				}
-				else if (m->y == 0 && m->x == 0) {			//マップがこれ以上上にも左にも行けない場合
-					//何もしない
-				} 
-				else {
-					mapMove(m, c, d, 1, 1, floor);
-				}
+				mapMove(m, c, d, 1, 1, floor);
 			}
 			else if (c->y == CHIP_SIZE * 2) {							//左端ではないが上端にいる場合		
-				if (m->y != 0) {							//マップがまだ上に行ける場合
-					mapMove(m, c, d, 0, 1, floor);
-					charaMove(c, d, -1, 0,floor);
-				}
-				else {
-					charaMove(c, d, -1, 0, floor);
-				}
+				mapMove(m, c, d, 0, 1, floor);
+				charaMove(c, d, -1, 0,floor);
 			}
 			else if (c->x == CHIP_SIZE * 2) {							//上端ではないが左端にいる場合
-				if (m->x != 0) {							//マップがまだ左に行ける場合
-					mapMove(m, c, d, 1, 0, floor);
-					charaMove(c,d,0,-1,floor);
-				}
-				else {
-					charaMove(c, d, 0, -1, floor);
-				}
+				mapMove(m, c, d, 1, 0, floor);
+				charaMove(c,d,0,-1,floor);
 			}
 			else {
 				charaMove(c, d, -1, -1, floor);
@@ -381,26 +349,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/*LeftDown*/
 		else if (!menuflag && keyState[KEY_INPUT_Z] == 1) {
 			if (c->y ==  MAP_HEIGHT && c->x == CHIP_SIZE * 2) {				//マップの左下端にいる場合
-				if (m->x == 0) {											//マップがこれ以上左に行けない場合
-					mapMove(m, c, d, 0, -1, floor);
-					charaMove(c, d, -1, 0, floor);
-				}
-				else {
-					mapMove(m, c, d, 1, -1, floor);
-				}
+				mapMove(m, c, d, 1, -1, floor);
 			}
 			else if (c->y == MAP_HEIGHT) {									//マップの左端でないが下端にいる場合
 				mapMove(m, c, d, 0, -1, floor);
 				charaMove(c, d, -1, 0, floor);
 			}
 			else if (c->x == CHIP_SIZE * 2) {								//マップの下端でないが左端にいる場合
-				if (m->x != 0) {											//マップがまだ左に行ける場合
-					mapMove(m, c, d, 1, 0, floor);
-					charaMove(c, d, 0, 1,floor);
-				}
-				else {
-					charaMove(c, d, 0, 1, floor);
-				}
+				mapMove(m, c, d, 1, 0, floor);
+				charaMove(c, d, 0, 1,floor);
+				
 			}
 			else {
 				charaMove(c, d, -1, 1, floor);
