@@ -1,6 +1,6 @@
 #pragma once
 
-struct map {
+struct maps {
 
 	int x = 0;
 	int y = 0;
