@@ -94,8 +94,8 @@ void mapMove(maps*,pokemon*,pokemon*, int, int, int);
 void setDirection(pokemon*, int);
 
 NODE* create_node(int, int, int);
-int g(NODE, NODE);
-int h(NODE, NODE);
+int g(NODE*, NODE*);
+int h(NODE*, NODE*);
 void search_node(LIST*, LIST*, NODE*, NODE*, NODE*, NODE*);
 /*キーが押されているフレーム数によって表示する画像を変更する*/
 /*
@@ -793,6 +793,7 @@ bool life(pokemon* enemy, pokemon* me) {
 /*敵の動き*/
 void enemyMove(pokemon* enemy,int floor) {
 
+
 	char buf[28];
 	int i = 0;
 	int j = 0;
@@ -803,9 +804,14 @@ void enemyMove(pokemon* enemy,int floor) {
 	LIST close;
 	open.index = 0;
 	close.index = 0;
+	s.i = SY;
+	s.j = SX;
+	mapping[floor][SY][SX] = 10;
+	open.node[open.index++] = &s;
 
-
-
+	mapping[floor][GY][GX] = 11;
+	e.i = GY;
+	e.j = GX;
 	while (1) {
 		NODE* n = NULL;
 		for (i = 0; i < open.index; i++) {
@@ -821,17 +827,15 @@ void enemyMove(pokemon* enemy,int floor) {
 
 		// openからリストがなくなったので終了する
 		if (n == NULL) {
-			printf("no goal...\n");
 			break;
 		}
 
 		// もしGなら終了する
-		if (map[n->i][n->j] == 'G') {
-			printf("ok goal!!!\n");
+		if (mapping[floor][n->i][n->j] == 11) {
 
 			n = n->parent;
 			while (n->parent != NULL) {
-				map[n->i][n->j] = '$';
+				mapping[floor][n->i][n->j] = 4;
 				n = n->parent;
 			}
 
@@ -841,37 +845,28 @@ void enemyMove(pokemon* enemy,int floor) {
 		close.node[close.index++] = n;
 
 		// 上のノードを検索
-		if (n->i >= 1 && map[n->i - 1][n->j] == ' ' || map[n->i - 1][n->j] == 'G') {
+		if (n->i >= 1 && mapping[floor][n->i - 1][n->j] == 1 || mapping[floor][n->i - 1][n->j] == 11) {
 			search_node(&open, &close, &s, &e, n, create_node(n->i - 1, n->j, n->cost + 1));
 		}
 
 		// 下のノードを検索
-		if (n->i <= 11 && map[n->i + 1][n->j] == ' ' || map[n->i + 1][n->j] == 'G') {
+		if (n->i <= 11 && mapping[floor][n->i + 1][n->j] == 1 || mapping[floor][n->i + 1][n->j] == 11) {
 			search_node(&open, &close, &s, &e, n, create_node(n->i + 1, n->j, n->cost + 1));
 		}
 
 		// 右のノードを検索
-		if (n->j <= 24 && map[n->i][n->j + 1] == ' ' || map[n->i][n->j + 1] == 'G') {
+		if (n->j <= 24 && mapping[floor][n->i][n->j + 1] == 1 || mapping[floor][n->i][n->j + 1] == 11) {
 			search_node(&open, &close, &s, &e, n, create_node(n->i, n->j + 1, n->cost + 1));
 		}
 
 		// 左のノードを検索
-		if (n->j >= 1 && map[n->i][n->j - 1] == ' ' || map[n->i][n->j - 1] == 'G') {
+		if (n->j >= 1 && mapping[floor][n->i][n->j - 1] == 1 || mapping[floor][n->i][n->j - 1] == 11) {
 			search_node(&open, &close, &s, &e, n, create_node(n->i, n->j - 1, n->cost + 1));
 		}
 
 		if (loop++ > 1000) { printf("loop error...\n"); break; }
 	}
-
-	for (i = 0; i < ARRAY_NUM(map); i++) {
-		for (j = 0; j < 26; j++) {
-			printf("%c", map[i][j]);
-		}
-		printf("\n");
-	}
-
-	return 0;
-}
+	
 	
 	/*敵が同じマップ内にいると、自分に向かってくる*/
 	if (findPokemon(enemy, c)) {
