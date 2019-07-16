@@ -12,8 +12,8 @@ typedef struct {
 } anode;
 
 struct NODE{
-	int i;
-	int j;
+	int y;
+	int x;
 	int cost;
 	struct NODE *parent;
 };

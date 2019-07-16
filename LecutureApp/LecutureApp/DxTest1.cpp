@@ -92,11 +92,13 @@ void charaMove(pokemon*, int, int, int);
 void charaMove(pokemon*,pokemon*, int, int, int);
 void mapMove(maps*,pokemon*,pokemon*, int, int, int);
 void setDirection(pokemon*, int);
+void messageInit();
 
 NODE* create_node(int, int, int);
 int g(NODE*, NODE*);
 int h(NODE*, NODE*);
 void search_node(LIST*, LIST*, NODE*, NODE*, NODE*, NODE*);
+NODE* Astar(int);
 /*キーが押されているフレーム数によって表示する画像を変更する*/
 /*
 int getDnum(int key) {
@@ -164,6 +166,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	/*bgm再生開始*/
 	PlaySoundMem(bgm, DX_PLAYTYPE_LOOP);
 
+	NODE* nextEnemy;
+
 	/*描画する*/
 	// while(裏画面を表画面に反映, メッセージ処理, 画面クリア,フレームカウント)
 	while (ScreenFlip() == 0 && ProcessMessage() == 0 && ClearDrawScreen() == 0 && getCountFrame() == 0) {
@@ -204,9 +208,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/*座標は画像の真ん中に持つ*/
 		DrawRotaGraph(c->x + 20, c->y + 20, 1.5, 0, c->moveTexture[c->direction][d_num], true);
 		
-		if (calc) {
-
-		}
 
 		/*生きてたら敵表示*/
 		if (d->isLive) { DrawRotaGraph(d->x + 20, d->y + 20, 1.5, 0, d->moveTexture[d->direction][d_num], true); }
@@ -784,6 +785,7 @@ bool life(pokemon* enemy, pokemon* me) {
 			//w_press();
 		}
 		enemy->isLive = false;
+		messageInit();
 		return TRUE;
 	}
 	return FALSE;
@@ -794,87 +796,18 @@ bool life(pokemon* enemy, pokemon* me) {
 void enemyMove(pokemon* enemy,int floor) {
 
 
-	char buf[28];
-	int i = 0;
-	int j = 0;
-	int loop = 0;
-	NODE s = { 0,0,0 };
-	NODE e = { 0,0,0 };
-	LIST open;
-	LIST close;
-	open.index = 0;
-	close.index = 0;
-	s.i = SY;
-	s.j = SX;
-	mapping[floor][SY][SX] = 10;
-	open.node[open.index++] = &s;
-
-	mapping[floor][GY][GX] = 11;
-	e.i = GY;
-	e.j = GX;
-	while (1) {
-		NODE* n = NULL;
-		for (i = 0; i < open.index; i++) {
-			if (open.node[i] != NULL) {
-				int cost = g(&s, open.node[i]);
-				if (n == NULL || n->cost > cost) {
-					// ノードの中で一番最小のコストを得る
-					n = open.node[i];
-					open.node[i] = NULL;
-				}
-			}
-		}
-
-		// openからリストがなくなったので終了する
-		if (n == NULL) {
-			break;
-		}
-
-		// もしGなら終了する
-		if (mapping[floor][n->i][n->j] == 11) {
-
-			n = n->parent;
-			while (n->parent != NULL) {
-				mapping[floor][n->i][n->j] = 4;
-				n = n->parent;
-			}
-
-			break;
-		}
-
-		close.node[close.index++] = n;
-
-		// 上のノードを検索
-		if (n->i >= 1 && mapping[floor][n->i - 1][n->j] == 1 || mapping[floor][n->i - 1][n->j] == 11) {
-			search_node(&open, &close, &s, &e, n, create_node(n->i - 1, n->j, n->cost + 1));
-		}
-
-		// 下のノードを検索
-		if (n->i <= 11 && mapping[floor][n->i + 1][n->j] == 1 || mapping[floor][n->i + 1][n->j] == 11) {
-			search_node(&open, &close, &s, &e, n, create_node(n->i + 1, n->j, n->cost + 1));
-		}
-
-		// 右のノードを検索
-		if (n->j <= 24 && mapping[floor][n->i][n->j + 1] == 1 || mapping[floor][n->i][n->j + 1] == 11) {
-			search_node(&open, &close, &s, &e, n, create_node(n->i, n->j + 1, n->cost + 1));
-		}
-
-		// 左のノードを検索
-		if (n->j >= 1 && mapping[floor][n->i][n->j - 1] == 1 || mapping[floor][n->i][n->j - 1] == 11) {
-			search_node(&open, &close, &s, &e, n, create_node(n->i, n->j - 1, n->cost + 1));
-		}
-
-		if (loop++ > 1000) { printf("loop error...\n"); break; }
-	}
-	
-	
 	/*敵が同じマップ内にいると、自分に向かってくる*/
 	if (findPokemon(enemy, c)) {
-		
 		/*攻撃しない*/
 		/*移動処理(A*アルゴリズムを後に使用)*/
 		if (!isNearPokemon(enemy, c) && enemy->isLive) {
-			charaMove(enemy,0, 0, floor);
+
+			NODE* min = Astar(floor);
+
+			enemy->x = min->x*CHIP_SIZE;
+			enemy->y = min->y*CHIP_SIZE;
+
+			//charaMove(enemy,min->x-SX, min->y-SY, floor);
 			/*
 			if (c->x != enemy->x && c->y != enemy->y && c->x < enemy->x && c->y < enemy->y) {
 				charaMove(d, -1, -1,floor);
@@ -938,7 +871,7 @@ void enemyMove(pokemon* enemy,int floor) {
 			break;
 		}
 	}
-
+	//delete &st;
 }
 
 /*0～3の乱数を得る*/
@@ -1048,11 +981,11 @@ void setDirection(pokemon* me, int direction) {
 }
 
 
-NODE* create_node(int i, int j, int cost) {
+NODE* create_node(int y, int x, int cost) {
 	static NODE n[NODE_MAX];
 	static int index = 0;
-	n[index].i = i;
-	n[index].j = j;
+	n[index].y = y;
+	n[index].x = x;
 	n[index].cost = cost;
 	return &n[index++];
 }
@@ -1065,16 +998,16 @@ int h(NODE* e, NODE* n) {
 	return 0;
 }
 
-void search_node(LIST* open, LIST* close, NODE* s, NODE* e, NODE* n, NODE* m) {
+void search_node(LIST* open, LIST* close, NODE* s, NODE* e, NODE* n, NODE* mm) {
 	int in_open = -1;
 	int in_close = -1;
 	int i;
-	int fdmcost = g(s, n) + h(e, m) + 1;
-	int fsmcost = g(s, m) + h(e, m);
+	int fdmcost = g(s, n) + h(e, mm) + 1;
+	int fsmcost = g(s, mm) + h(e, mm);
 
 	// mがopenリストに含まれているか
 	for (i = 0; i < open->index; i++) {
-		if (open->node[i] != NULL && m->i == open->node[i]->i && m->j == open->node[i]->j) {
+		if (open->node[i] != NULL && mm->y == open->node[i]->y && mm->x == open->node[i]->x) {
 			in_open = i;
 			break;
 		}
@@ -1082,7 +1015,7 @@ void search_node(LIST* open, LIST* close, NODE* s, NODE* e, NODE* n, NODE* m) {
 
 	// mがcloseリストに含まれているか
 	for (i = 0; i < close->index; i++) {
-		if (close->node[i] != NULL && m->i == close->node[i]->i && m->j == close->node[i]->j) {
+		if (close->node[i] != NULL && mm->y == close->node[i]->y && mm->x == close->node[i]->x) {
 			in_close = i;
 			break;
 		}
@@ -1090,21 +1023,113 @@ void search_node(LIST* open, LIST* close, NODE* s, NODE* e, NODE* n, NODE* m) {
 
 	// m が Openリストにも Closeリストにも含まれていない場合
 	if (in_open == -1 && in_close == -1) {
-		m->parent = n;
-		open->node[open->index++] = m;
+		mm->parent = n;
+		open->node[open->index++] = mm;
 	}
 
 	if (in_open > -1) {
 		if (fdmcost < fsmcost) {
-			m->parent = n;
+			mm->parent = n;
 		}
 	}
 
 	if (in_close > -1) {
 		if (fdmcost < fsmcost) {
-			m->parent = n;
-			open->node[open->index++] = m;
+			mm->parent = n;
+			open->node[open->index++] = mm;
 			close->node[in_close] = NULL;
 		}
 	}
+}
+
+void messageInit() {
+	messageflag = false;
+	for (int i = 0; i < 256; i++) {
+		message1[i] = '\0';
+		message2[i] = '\0';
+		message3[i] = '\0';
+	}
+}
+
+NODE* Astar(int floor) {
+
+	std::stack<NODE*> st;
+
+	int i = 0;
+	int j = 0;
+	int loop = 0;
+	NODE s = { 0,0,0 };
+	NODE e = { 0,0,0 };
+	LIST open;
+	LIST close;
+	open.index = 0;
+	close.index = 0;
+
+	s.y = SY;
+	s.x = SX;
+
+	open.node[open.index++] = &s;
+
+	e.y = GY;
+	e.x = GX;
+
+	while (1) {
+		NODE* n = NULL;
+		for (i = 0; i < open.index; i++) {
+			if (open.node[i] != NULL) {
+				int cost = g(&s, open.node[i]);
+				if (n == NULL || n->cost > cost) {
+					// ノードの中で一番最小のコストを得る
+					n = open.node[i];
+					open.node[i] = NULL;
+				}
+			}
+		}
+
+		// openリストがなくなったので終了する
+		if (n == NULL) {
+			break;
+		}
+
+		// もしGなら終了する
+		if (n->y == GY && n->x == GX) {
+
+			n = n->parent;
+			st.push(n);
+			while (n->parent != NULL) {
+				n = n->parent;
+				st.push(n);
+			}
+			
+			break;
+		}
+
+		close.node[close.index++] = n;
+
+		// 上のノードを検索
+		if (n->y >= 1 && mapping[floor][n->y - 1][n->x] > 0 || (n->y - 1 == GY && n->x == GX)) {
+			search_node(&open, &close, &s, &e, n, create_node(n->y - 1, n->x, n->cost + 1));
+		}
+
+		// 下のノードを検索
+		if (n->y <= 200 && mapping[floor][n->y + 1][n->x] > 0 || (n->y + 1 == GY && n->x == GX)) {
+			search_node(&open, &close, &s, &e, n, create_node(n->y + 1, n->x, n->cost + 1));
+		}
+
+		// 右のノードを検索
+		if (n->x <= 200 && mapping[floor][n->y][n->x + 1] > 0 || (n->y == GY && n->x + 1 == GX)) {
+			search_node(&open, &close, &s, &e, n, create_node(n->y, n->x + 1, n->cost + 1));
+		}
+
+		// 左のノードを検索
+		if (n->x >= 1 && mapping[floor][n->y][n->x - 1] > 0 || (n->y == GY && n->x - 1 == GX)) {
+			search_node(&open, &close, &s, &e, n, create_node(n->y, n->x - 1, n->cost + 1));
+		}
+
+		if (loop++ > 1000) { break; }
+	}
+
+	st.pop();
+
+	return st.top();
 }

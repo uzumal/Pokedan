@@ -1,10 +1,12 @@
 ﻿  DxTest1.cpp
-C:\Users\user\source\repos\Pokedan\LecutureApp\LecutureApp\DxTest1.cpp(410,30): warning C4312:  '型キャスト': 'int' からより大きいサイズの 'char *' へ変換します。
-C:\Users\user\source\repos\Pokedan\LecutureApp\LecutureApp\DxTest1.cpp(415,30): warning C4312:  '型キャスト': 'int' からより大きいサイズの 'char *' へ変換します。
-C:\Users\user\source\repos\Pokedan\LecutureApp\LecutureApp\DxTest1.cpp(796,7): warning C4101:  'buf': ローカル変数は 1 度も使われていません。
+DxTest1.cpp(411): warning C4312: '型キャスト': 'int' からより大きいサイズの 'char *' へ変換します。
+DxTest1.cpp(416): warning C4312: '型キャスト': 'int' からより大きいサイズの 'char *' へ変換します。
+DxTest1.cpp(169): warning C4101: 'nextEnemy': ローカル変数は 1 度も使われていません。
+C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(1193,5): warning MSB8030: The linker switch "Minimum Required Version" requires "SubSystem" to be set.  Without "SubSystem", the "Minimum Required Version" would not be passed to linker and could prevent to the output binary from running on older Operating Systems.
   コード生成しています。
-  2 of 147 functions ( 1.4%) were compiled, the rest were copied from previous compilation.
+  4 of 388 functions ( 1.0%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
+    3 functions had inline decision re-evaluated but remain unchanged
   コード生成が終了しました。
-  LecutureApp.vcxproj -> C:\Users\user\source\repos\Pokedan\LecutureApp\x64\Release\LecutureApp.exe
+  LecutureApp.vcxproj -> E:\temp\Visual Studio 2015\Projects\Pokedan\LecutureApp\x64\Release\LecutureApp.exe
+  LecutureApp.vcxproj -> E:\temp\Visual Studio 2015\Projects\Pokedan\LecutureApp\x64\Release\LecutureApp.pdb (Full PDB)
