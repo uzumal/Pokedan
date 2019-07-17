@@ -19,8 +19,14 @@
 #define SX (d->x/CHIP_SIZE - m->x)
 #define SY (d->y/CHIP_SIZE - m->y)
 
+#define WHITE	GetColor(255,255,255)
+#define RED		GetColor(255,0,0)
+#define GREEN	GetColor(0,255,0)
+#define BLUE	GetColor(0,0,255)
+#define BLACK	GetColor(0,0,0)
+
 #define KEY(X,Y) ((X) * 100 + (Y))
-#define KEYDATA(X, Y, N) std::pair<int, NODE>(KEY(X,Y), N)		//À•W‚Æƒm[ƒh‚ğƒyƒA‚É‚·‚éH
+#define KEYDATA(X, Y, N) std::pair<int, NODE>(KEY(X,Y), N)		//À•W‚Æƒm[ƒh‚ğƒyƒA‚É‚·‚é
 
 
 /*ƒWƒƒƒ“ƒv—p•Ï”*/
@@ -67,8 +73,11 @@ int skillBox;
 int stairs_down;
 int stairs_up;
 int load;
+int load2;
 
-/*ƒvƒƒgƒ^ƒCƒvéŒ¾*/
+
+
+/*ŠÖ”ƒvƒƒgƒ^ƒCƒvéŒ¾*/
 int init();										//‰Šú‰»
 int getRandom(int,int);							//int max`int min‚Ì”ÍˆÍ‚Å—”‚ğæ“¾
 
@@ -109,8 +118,8 @@ void charaMove(pokemon*,pokemon*, int, int, int);		//ƒLƒƒƒ‰ˆÚ“®A©•ª—p@“ü‚ê‘Ö‚
 void mapMove(maps*,pokemon*,pokemon*, int, int, int);	//ƒ}ƒbƒvˆÚ“®Aˆø‚ÁŠ|‚©‚èl—¶
 void setDirection(pokemon*, int);						//ƒLƒƒƒ‰‚ÌŒü‚¢‚Ä‚¢‚é•ûŒü‚ğƒZƒbƒg‚·‚é
 
-
-
+void drawMap(int);
+void drawCharacter(pokemon*,int d_num);
 
 /*ƒL[‚ª‰Ÿ‚³‚ê‚Ä‚¢‚éƒtƒŒ[ƒ€”‚É‚æ‚Á‚Ä•\¦‚·‚é‰æ‘œ‚ğ•ÏX‚·‚é*/
 /*
@@ -180,18 +189,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// while(— ‰æ–Ê‚ğ•\‰æ–Ê‚É”½‰f, ƒƒbƒZ[ƒWˆ—, ‰æ–ÊƒNƒŠƒA,ƒtƒŒ[ƒ€ƒJƒEƒ“ƒg)
 	while (ScreenFlip() == 0 && ProcessMessage() == 0 && ClearDrawScreen() == 0 && getCountFrame() == 0) {
 
-		/*ƒ}ƒbƒv‘S”ÍˆÍ‘–¸*/
-		for (int x = m->x; x < SCREEN_WIDTH/CHIP_SIZE - m->x; x++) {
-			for (int y = m->y; y < SCREEN_HEIGHT/CHIP_SIZE - m->y; y++) {
-				if (mapping[floor][y][x] == 0)		 { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, white, " "); }//DrawRotaGraph(x*CHIP_SIZE + 20, y*CHIP_SIZE + 20, 1.5,0,c->moveTexture[0][0],true); }
-				else if (mapping[floor][y][x] == 1)  { DrawRotaGraph((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, 1,0,load,true); }
-				else if (mapping[floor][y][x] == 2)  { DrawRotaGraph((m->x + x) * CHIP_SIZE + 20   , (m->y + y) * CHIP_SIZE + 20, 1.5,0, d->moveTexture[0][0],true); }
-				else if (mapping[floor][y][x] == 3)  { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, GetColor(0, 0, 255), "B"); }
-				else if (mapping[floor][y][x] == 5)  { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, GetColor(0,0,255), "*"); }
-				else if (mapping[floor][y][x] == 100){ DrawRotaGraph((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, 1, 0, stairs_down, true);}
-				else if (mapping[floor][y][x] == 101){ DrawRotaGraph((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, 1, 0, stairs_up, true);}
-			}
-		}
+		drawMap(floor);
 		
 		/*500ms(0.5•b)‚Éˆê“x‰æ‘œXV(•à‚¢‚Ä‚¢‚é‚æ‚¤‚ÉŒ©‚¦‚é)*/
 		if (GetNowCount() - tempTime> 500) 
@@ -216,18 +214,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		DrawFormatString(300, 20, white, "ƒS[ƒ‹À•W(%d,%d)", GX,GY);
 		DrawFormatString(100, 40, white, "%d", GetNowCount());
 
-		/*DrawRotaGraph(xÀ•W,yÀ•W,kÚ“x,Šp“x,•`‰æ‚·‚é‰æ‘œƒnƒ“ƒhƒ‹,”wŒi“§‰ßˆ—‚ÌON,OFF)*/
-		/*À•W‚Í‰æ‘œ‚Ì^‚ñ’†‚É‚Â*/
-		DrawRotaGraph(c->x + 20, c->y + 20, 1.5, 0, c->moveTexture[c->direction][d_num], true);
-		
 
-		/*¶‚«‚Ä‚½‚ç“G•\¦*/
-		if (d->isLive) { DrawRotaGraph(d->x + 20, d->y + 20, 1.5, 0, d->moveTexture[d->direction][d_num], true); }
+
+		drawCharacter(c, d_num);
+		
+		drawCharacter(d, d_num);
 
 		/*ƒƒbƒZ[ƒWo—Í*/
 		outMessage();
 
-		/*qƒL[‚ÅI‚í‚è*/
+		/*spaceƒL[‚ÅI‚í‚è*/
 		if (keyState[KEY_INPUT_SPACE] == 1) { endflag = true; }
 		
 		/*‚í‚´•\‚ğÁ‹*/
@@ -271,134 +267,48 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		/*Right*/
 		if (!menuflag && keyState[KEY_INPUT_D]==1) {
-			if (c->x == MAP_WIDTH) { 
-				mapMove(m, c, d, -1, 0,floor);
-			}
-			else {
-				charaMove(c,d,1,0,floor);
-			}
-			if (!keyState[KEY_INPUT_Y])enemyMove(d, floor);
+			charaMove(c,d,1,0,floor);
 		}
 
 		/*Left*/
 		else if (!menuflag && keyState[KEY_INPUT_A]==1) { 
-			if (c->x == CHIP_SIZE * 2 && m->x != 0) {
-				mapMove(m, c, d, 1, 0, floor);
-			}
-			else  {
-				charaMove(c,d, -1, 0,floor);
-			}
-			if (!keyState[KEY_INPUT_Y])enemyMove(d, floor);
+			charaMove(c,d, -1, 0,floor);
 		}
 
 		/*Up*/
 		else if (!menuflag && keyState[KEY_INPUT_W]==1) {
-			if (c->y == CHIP_SIZE * 2 && m->y != 0) { 
-				mapMove(m, c, d, 0, 1,floor);
-			}
-			else {
-				charaMove(c,d, 0, -1,floor);
-			}
-			if (!keyState[KEY_INPUT_Y])enemyMove(d, floor);
+			charaMove(c,d, 0, -1,floor);
 		}
 
 		/*Down*/
 		else if (!menuflag && keyState[KEY_INPUT_X]==1) {
-			if (c->y == MAP_HEIGHT){
-				mapMove(m, c, d, 0, -1,floor);
-			}
-			else {
-				charaMove(c,d, 0, 1,floor);
-			}
-			if(!keyState[KEY_INPUT_Y])enemyMove(d, floor);
+			charaMove(c,d, 0, 1,floor);
 		}
 
 		/*RightUp*/
 		else if (!menuflag && keyState[KEY_INPUT_E] == 1) {
-			if (c->y == CHIP_SIZE * 2 && c->x == MAP_WIDTH) { //‰Eã’[‚Ìê‡
-				mapMove(m, c, d, -1, 1, floor);
-			}
-			else if (c->y == CHIP_SIZE * 2) {			//‰E’[‚Å‚Í‚È‚¢‚ªã’[‚Ìê‡
-				mapMove(m, c, d, 0, 1, floor);
-				charaMove(c, d, 1, 0, floor);
-			}
-			else if (c->x == MAP_WIDTH){				//ã’[‚Å‚Í‚È‚¢‚ª‰E’[‚Ìê‡
-				mapMove(m, c, d, -1, 0, floor);
-				charaMove(c, d, 0, -1, floor);
-			}
-			else  {										//ƒ}ƒbƒv‚Ì’[‚Å‚È‚¢ê‡Ay‚ğ‰Ÿ‚µ‚Ä‚¢‚È‚¢‚Æ•’Ê‚ÉˆÚ“®
-				charaMove(c, d, 1, -1,floor);
-			}
-			if(!keyState[KEY_INPUT_Y])enemyMove(d, floor);
+			charaMove(c, d, 1, -1,floor);
 		}
 		/*RightDown*/
 		else if (!menuflag && keyState[KEY_INPUT_C] == 1) {
-			
-			if (c->y == MAP_HEIGHT && c->x == MAP_WIDTH) {	//ƒ}ƒbƒv‚Ì‰E‰º’[‚Å‚ ‚ê‚Î
-				mapMove(m, c, d, -1, -1, floor);
-			}
-			else if (c->y == MAP_HEIGHT) {					//‰E’[‚Å‚Í‚È‚¢‚ª‰º’[‚Å‚ ‚éê‡
-				mapMove(m, c, d, 0, -1, floor);
-				charaMove(c, d, 1, 0, floor);
-			}
-			else if (c->x == MAP_WIDTH) {					//‰º’[‚Å‚Í‚È‚¢‚ª‰E’[‚Å‚ ‚éê‡
-				mapMove(m, c, d, -1, 0, floor);
-				charaMove(c, d, 0, 1, floor);
-			}
-			else {
-				charaMove(c, d, 1, 1, floor);
-			}
-			if(!keyState[KEY_INPUT_Y])enemyMove(d, floor);
+			charaMove(c, d, 1, 1, floor);
 		}
 
 		/*LeftUp*/
 		else if (!menuflag && keyState[KEY_INPUT_Q] == 1) {		//ƒƒjƒ…[‚ğŠJ‚¢‚Ä‚¨‚ç‚¸AQƒL[‚ğ‰Ÿ‚·‚Æ
-			if (c->y == CHIP_SIZE * 2 && c->x == CHIP_SIZE * 2) {		//¶ã’[‚É‚¢‚éê‡
-				mapMove(m, c, d, 1, 1, floor);
-			}
-			else if (c->y == CHIP_SIZE * 2) {							//¶’[‚Å‚Í‚È‚¢‚ªã’[‚É‚¢‚éê‡		
-				mapMove(m, c, d, 0, 1, floor);
-				charaMove(c, d, -1, 0,floor);
-			}
-			else if (c->x == CHIP_SIZE * 2) {							//ã’[‚Å‚Í‚È‚¢‚ª¶’[‚É‚¢‚éê‡
-				mapMove(m, c, d, 1, 0, floor);
-				charaMove(c,d,0,-1,floor);
-			}
-			else {
-				charaMove(c, d, -1, -1, floor);
-			}
-			if(!keyState[KEY_INPUT_Y])enemyMove(d, floor);
+			charaMove(c, d, -1, -1, floor);
 		}
 
 		/*LeftDown*/
 		else if (!menuflag && keyState[KEY_INPUT_Z] == 1) {
-			if (c->y ==  MAP_HEIGHT && c->x == CHIP_SIZE * 2) {				//ƒ}ƒbƒv‚Ì¶‰º’[‚É‚¢‚éê‡
-				mapMove(m, c, d, 1, -1, floor);
-			}
-			else if (c->y == MAP_HEIGHT) {									//ƒ}ƒbƒv‚Ì¶’[‚Å‚È‚¢‚ª‰º’[‚É‚¢‚éê‡
-				mapMove(m, c, d, 0, -1, floor);
-				charaMove(c, d, -1, 0, floor);
-			}
-			else if (c->x == CHIP_SIZE * 2) {								//ƒ}ƒbƒv‚Ì‰º’[‚Å‚È‚¢‚ª¶’[‚É‚¢‚éê‡
-				mapMove(m, c, d, 1, 0, floor);
-				charaMove(c, d, 0, 1,floor);
-				
-			}
-			else {
-				charaMove(c, d, -1, 1, floor);
-			}
-			if (!keyState[KEY_INPUT_Y])enemyMove(d, floor);
+			charaMove(c, d, -1, 1, floor);
 		}
 
-
-		/*
-		if (!menuflag && !keyState[KEY_INPUT_Y]) {
-			if (keyState[KEY_INPUT_Q] == 1 || keyState[KEY_INPUT_W] == 1 || keyState[KEY_INPUT_] == 1 || keyState[KEY_INPUT_DOWN] == 1){
-				if(!(c->x == CHIP_SIZE * 2||c->x == MAP_WIDTH||c->y == CHIP_SIZE * 2 || c->y == MAP_HEIGHT) || !isNearPokemon(c,d))
-					enemyMove(d,floor);
-			}
+		//‚Ü‚¾ƒeƒXƒg’iŠK‚È‚Ì‚Å‘S•”“®‚­
+		if (!menuflag && keyState) {
+			if (keyState[KEY_INPUT_Y] == 0 && keyState[KEY_INPUT_I] == 0)enemyMove(d,floor);
 		}
-		*/
+
 
 		/*ŠK’iˆÚ“®ˆ—*/
 		if (mapping[floor][GY][GX] == 100) {
@@ -560,6 +470,7 @@ int init() {
 	down = LoadSoundMem("‰¹Šy/down1.mp3");
 
 	load = LoadGraph("‰æ‘œ/load.png");
+	load2 = LoadGraph("‰æ‘œ/load2.png");
 
 	return 0;
 }
@@ -790,13 +701,19 @@ bool life(pokemon* enemy, pokemon* me) {
 /*“G‚Ì“®‚«*/
 void enemyMove(pokemon* enemy,int floor) {
 
+	//€‚ñ‚Å‚¢‚½‚ç‰½‚à‚µ‚È‚¢
+	if (!enemy->isLive)return;
+
+	int sx = enemy->x / CHIP_SIZE - m->x;
+	int sy = enemy->y / CHIP_SIZE - m->y;
+
 	/*“G‚ª“¯‚¶ƒ}ƒbƒv“à‚É‚¢‚é‚ÆA©•ª‚ÉŒü‚©‚Á‚Ä‚­‚é*/
 	if (findPokemon(enemy, c)) {
 		/*UŒ‚‚µ‚È‚¢*/
 		/*ˆÚ“®ˆ—*/
 		if (!isNearPokemon(enemy, c) && enemy->isLive) {
 			NODE* nextEnemy = Astar(enemy,floor);
-			charaMove(enemy,nextEnemy->x - SX,nextEnemy->y-SY,floor);
+			charaMove(enemy,nextEnemy->x - sx,nextEnemy->y-sy,floor);
 		}
 		/*UŒ‚‚·‚é*/
 		else if (isNearPokemon(enemy, c) && c->hp > 0 && enemy->isLive) {
@@ -858,6 +775,20 @@ void charaMove(pokemon* me,pokemon* enemy, int x, int y,int floor) {
 	if (y == 1)setDirection(me,DOWN);
 	else if(y == -1)setDirection(me,UP);
 
+	//ƒ}ƒbƒvˆÚ“®—p
+	int mx = 0;
+	int my = 0;
+
+
+	if (me->x == CHIP_SIZE * 2 && x == -1 || me->x == MAP_WIDTH && x ==1) {
+		mx = x * -1;
+		x = 0;
+	}
+	if (me->y == CHIP_SIZE * 2 && y == -1 || me->y == MAP_HEIGHT && y == 1) {
+		my = y * -1;
+		y = 0;
+	}
+
 	/*ˆÚ“®æ‚ÌƒZƒ‹Šm”F*/
 	int nextCell = mapping[floor][me->y / CHIP_SIZE - m->y + y][me->x  / CHIP_SIZE - m->x + x];
 
@@ -867,7 +798,7 @@ void charaMove(pokemon* me,pokemon* enemy, int x, int y,int floor) {
 		int nextCell_x = mapping[floor][me->y / CHIP_SIZE - m->y][me->x / CHIP_SIZE - m->x + x];	//©•ª‚Ì¶‰E‚Ç‚¿‚ç‚©‚ÌƒZƒ‹‚Ìó‘Ô
 		int nextCell_y = mapping[floor][me->y / CHIP_SIZE - m->y + y][me->x / CHIP_SIZE - m->x];	//©•ª‚Ìã‰º‚Ç‚¿‚ç‚©‚ÌƒZƒ‹‚Ìó‘Ô
 
-		//i‚Şæ‚ªáŠQ•¨‚È‚ç
+		//i‚Şæ‚ªáŠQ•¨‚ÅA¶‰E‚Ç‚¿‚ç‚©Aã‰º‚Ç‚¿‚ç‚©‚ª“¹‚Å‚ ‚ê‚ÎŠŠ‚é
 		if (nextCell <= 0 && !keyState[KEY_INPUT_Y]) {
 			if (nextCell_x > 0 && nextCell_y <=0)me->x += x * CHIP_SIZE;
 			if (nextCell_y > 0 && nextCell_x <=0)me->y += y * CHIP_SIZE;
@@ -879,6 +810,9 @@ void charaMove(pokemon* me,pokemon* enemy, int x, int y,int floor) {
 		if (me->x + x * CHIP_SIZE == enemy->x && me->y + y * CHIP_SIZE == enemy->y) { enemy->x = me->x; enemy->y = me->y; }
 		me->x += x * CHIP_SIZE;
 		me->y += y * CHIP_SIZE;
+	}
+	if (!(mx == 0 && my == 0)) {
+		mapMove(m, me, enemy, mx, my, floor);
 	}
 }
 
@@ -902,13 +836,13 @@ void charaMove(pokemon* me, int x, int y, int floor) {
 }
 
 void mapMove(maps* m,pokemon* me,pokemon* enemy, int x, int y, int floor) {
-
+	/*
 	if (x == -1)setDirection(me,RIGHT);
 	else if(x == 1)setDirection(me,LEFT);
 
 	if (y == -1)setDirection(me,DOWN);
 	else if(y == 1)setDirection(me,UP);
-
+	*/
 	int nextCell = mapping[floor][me->y / CHIP_SIZE - m->y - y][me->x  / CHIP_SIZE - m->x - x];
 	
 	//ƒ}ƒbƒv‚ª‚È‚È‚ß‚ÉˆÚ“®‚·‚é‚Æ‚«
@@ -1143,4 +1077,28 @@ NODE* Astar(pokemon* enemy,int floor) {
 
 	
 	return node;
+}
+
+void drawMap(int floor) {
+	/*ƒ}ƒbƒv‘S”ÍˆÍ‘–¸*/
+	for (int x = m->x; x < SCREEN_WIDTH / CHIP_SIZE - m->x; x++) {
+		for (int y = m->y; y < SCREEN_HEIGHT / CHIP_SIZE - m->y; y++) {
+			if (mapping[floor][y][x] == 0) { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, WHITE, " "); }
+			else if (mapping[floor][y][x] == 1) { DrawRotaGraph((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, 1, 0, load, true); }
+			else if (mapping[floor][y][x] == 2) { DrawRotaGraph((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, 1, 0, load2, true); }
+			else if (mapping[floor][y][x] == 3) { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, GetColor(0, 0, 255), "B"); }
+			else if (mapping[floor][y][x] == 5) { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, GetColor(0, 0, 255), "*"); }
+			else if (mapping[floor][y][x] == 100) { DrawRotaGraph((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, 1, 0, stairs_down, true); }
+			else if (mapping[floor][y][x] == 101) { DrawRotaGraph((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, 1, 0, stairs_up, true); }
+		}
+	}
+}
+
+void drawCharacter(pokemon* me, int d_num) {
+	//¶‚«‚Ä‚¢‚ê‚Î•\¦
+	if (me->isLive) {
+	/*À•W‚Í‰æ‘œ‚Ì^‚ñ’†‚É‚Â*/
+	/*DrawRotaGraph(xÀ•W,yÀ•W,kÚ“x,Šp“x,•`‰æ‚·‚é‰æ‘œƒnƒ“ƒhƒ‹,”wŒi“§‰ßˆ—‚ÌON,OFF)*/
+		DrawRotaGraph(me->x + 20, me->y + 20, 1.5, 0, me->moveTexture[me->direction][d_num], true);
+	}
 }
