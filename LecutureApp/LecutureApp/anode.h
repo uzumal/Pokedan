@@ -1,26 +1,11 @@
 #pragma once
-
-#define ARRAY_NUM(a) (sizeof(a)/sizeof(a[0]))
-#define NODE_MAX 1000
-
-typedef struct {
-	int x;
-	int y;
-	int px;
-	int py;
-	int cost;
-} anode;
+#include "define.h"
 
 struct NODE{
 	int y;
 	int x;
 	int cost;
+	int f;
 	struct NODE *parent;
 };
 typedef struct NODE NODE;
-
-struct LIST {
-	NODE* node[NODE_MAX];
-	int index;
-};
-typedef struct LIST LIST;

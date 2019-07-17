@@ -12,3 +12,5 @@
 
 struct pokemon;
 struct skill;
+struct maps;
+struct NODE;

@@ -1,7 +1,7 @@
 #pragma once
 #include "define.h"
 #include "skill.h"
-#include "map.h"
+
 struct pokemon {
 	char* name;					//–¼‘O
 	bool isLive = true;			//¶‚«‚Ä‚¢‚é‚©‚Ç‚¤‚©

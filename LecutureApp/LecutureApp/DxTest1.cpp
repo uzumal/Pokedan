@@ -1,17 +1,12 @@
 #include "DxLib.h"
-#include "pokemon.h"
+#include "all.h"
 #include <iostream>
 #include <random>
 #include <stdio.h>
 #include <tchar.h>
 #include <map>
-#include "anode.h"
 #include <stack>
 #include <stdio.h>
-
-int err_no[3];
-LIST* err_open;
-LIST* err_closed;
 
 #define SCREEN_WIDTH     (800)                          // 画面の横幅
 #define SCREEN_HEIGHT    (600)                          // 画面の縦幅
@@ -25,7 +20,7 @@ LIST* err_closed;
 #define SY (d->y/CHIP_SIZE - m->y)
 
 #define KEY(X,Y) ((X) * 100 + (Y))
-#define KEYDATA(X, Y, N) std::pair<int, anode>(KEY(X,Y), N)		//座標とノードをペアにする？
+#define KEYDATA(X, Y, N) std::pair<int, NODE>(KEY(X,Y), N)		//座標とノードをペアにする？
 
 
 /*ジャンプ用変数*/
@@ -57,6 +52,7 @@ pokemon dark;
 pokemon* c = &poke;
 pokemon* d = &dark;
 
+/*マップ構造体*/
 maps mp;
 maps* m = &mp;
 
@@ -72,38 +68,50 @@ int stairs_down;
 int stairs_up;
 int load;
 
-std::map<int, anode>mapOpen;
-std::map<int, anode>mapClose;
-std::stack<anode>st;
 /*プロトタイプ宣言*/
-int init();
-void w_press();										//Kボタン押したら進
-void attack(pokemon*, pokemon*, int);			//攻撃
+int init();										//初期化
+int getRandom(int,int);							//int max～int minの範囲で乱数を取得
+
+void wait(int);									//int時間待つ
+void wait(int,char* s);							//int時間待つ、中心に文字表示
+void w_press();									//Kボタン押したら進
+
+
+//主に自分用
+void attack(pokemon*, pokemon*, int);			//攻撃する
 void attack_for(pokemon* me, int attackNum);	//プレイヤー用攻撃
-void skillfull(int experience);					//技威力
+void skillfull(int experience);					//技威力設定
 void turnToPokemon(pokemon*, pokemon*);			//ポケモンの方を向く
 void moveJump(pokemon*);						//Jumpする
+
+
+//主に敵用
+void enemyMove(pokemon*, int);					//敵の動き
+bool isNearPokemon(pokemon*, pokemon*);			//敵が近くにいたら(攻撃圏内にいたら)true
+bool findPokemon(pokemon*, pokemon*);			//敵が発見できる近さにいたら
+bool life(pokemon* enemy, pokemon* me);			//敵死んでいるかどうか
+//A*アルゴリズム敵追尾
+int h(NODE*, NODE*);		//ヒューリスティック関数値を返す、マンハッタン距離
+void setNode(NODE* child, int x, int y, NODE* parent, int cost, int f);		//ノードの情報を一気に設定する
+int getCost();				//移動コストを返す、この場合は1を返す
+NODE* Astar(pokemon*,int);			//A*アルゴリズム適用後、次に進むセルのノードを返す
+
+
+//メッセージ系
 void initConsole();								//メッセージボックスを初期化する
 void setMessage(char[]);						//表示したいメッセージをセットする
 void outMessage();								//メッセージを表示する
-bool isNearPokemon(pokemon*, pokemon*);			//敵が近くにいたら(攻撃圏内にいたら)true
-bool findPokemon(pokemon*, pokemon*);
-bool life(pokemon* enemy, pokemon* me);						//敵死んでいるかどうか
-void enemyMove(pokemon*, int,NODE*);						//敵の動き
-int getRandom(int,int);
-void wait(int,char* s);
-void wait(int);
-void charaMove(pokemon*, int, int, int);
-void charaMove(pokemon*,pokemon*, int, int, int);
-void mapMove(maps*,pokemon*,pokemon*, int, int, int);
-void setDirection(pokemon*, int);
 void initMessage();
 
-NODE* create_node(int, int, int);
-int g(NODE*, NODE*);
-int h(NODE*, NODE*);
-void search_node(LIST*, LIST*, NODE*, NODE*, NODE*, NODE*);
-NODE* Astar(int);
+/*移動*/
+void charaMove(pokemon*, int, int, int);				//キャラ移動、敵用
+void charaMove(pokemon*,pokemon*, int, int, int);		//キャラ移動、自分用　入れ替わり考慮
+void mapMove(maps*,pokemon*,pokemon*, int, int, int);	//マップ移動、引っ掛かり考慮
+void setDirection(pokemon*, int);						//キャラの向いている方向をセットする
+
+
+
+
 /*キーが押されているフレーム数によって表示する画像を変更する*/
 /*
 int getDnum(int key) {
@@ -117,7 +125,7 @@ int getDnum(int key) {
 int getCountFrame() {
 	char tmpKey[256];								// 現在のキーの入力状態を格納する
 	GetHitKeyStateAll(tmpKey);						// 全てのキーの入力状態を得る
-	for (int i = 0; i<256; i++) {
+	for (int i = 0; i < 256; i++) {
 		if (tmpKey[i] != 0) {						// i番のキーコードに対応するキーが押されていたら
 			keyState[i]++;							// 加算
 			if (keyState[i] == 60)keyState[i] = 2;	//移動時の画像処理に使用
@@ -127,22 +135,6 @@ int getCountFrame() {
 		}
 	}
 	return 0;
-}
-
-void error_dialog(HWND hWnd) {
-	DWORD errorcode = GetLastError();
-	LPVOID lpMsgBuf;
-	FormatMessage(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER  //      テキストのメモリ割り当てを要求する
-		| FORMAT_MESSAGE_FROM_SYSTEM    //      エラーメッセージはWindowsが用意しているものを使用
-		| FORMAT_MESSAGE_IGNORE_INSERTS,//      次の引数を無視してエラーコードに対するエラーメッセージを作成する
-		NULL, errorcode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),//   言語を指定
-		(LPTSTR)& lpMsgBuf,                          //      メッセージテキストが保存されるバッファへのポインタ
-		0,
-		NULL);
-
-	MessageBox(hWnd, (LPCTSTR)lpMsgBuf, _TEXT("エラー"), MB_OK | MB_ICONINFORMATION);
-	LocalFree(lpMsgBuf);
 }
 
 /******************************************************************************/
@@ -175,16 +167,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	int d_num = 0;
 	int tempTime = 0;
-	int nearCell[9];
-	int enemyCell = 0;
 
 	int floor = 0;
 
 	/*白色を格納*/
 	const int white = GetColor(255, 255, 255);
 
-	bool calc = true;
-	NODE* nextEnemy = NULL;
 	/*bgm再生開始*/
 	PlaySoundMem(bgm, DX_PLAYTYPE_LOOP);
 
@@ -204,18 +192,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				else if (mapping[floor][y][x] == 101){ DrawRotaGraph((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, 1, 0, stairs_up, true);}
 			}
 		}
-		err_no[0] = 0;
-		err_no[1] = 0;
-		err_no[2] = 0;
-		if (calc) { 
-			__try { nextEnemy = Astar(floor); 
-			}
-			__except (1) {
-				error_dialog(0);
-			}
-			calc = false; 
-		}
-
+		
 		/*500ms(0.5秒)に一度画像更新(歩いているように見える)*/
 		if (GetNowCount() - tempTime> 500) 
 		{	
@@ -238,7 +215,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		DrawFormatString(100, 20, white, "スタート座標(%d,%d)", SX, SY);
 		DrawFormatString(300, 20, white, "ゴール座標(%d,%d)", GX,GY);
 		DrawFormatString(100, 40, white, "%d", GetNowCount());
-		DrawFormatString(100, 60, white, "(%d,%d)", nextEnemy->x, nextEnemy->y);
 
 		/*DrawRotaGraph(x座標,y座標,縮尺度,角度,描画する画像ハンドル,背景透過処理のON,OFF)*/
 		/*座標は画像の真ん中に持つ*/
@@ -288,9 +264,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				attack_for(c, c->attackNum);
 			}
 			if (life(d, c) == FALSE) {
-				enemyMove(d, floor,nextEnemy);
+				enemyMove(d, floor);
 			}
-			calc = true;
 		}
 
 
@@ -301,9 +276,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			else {
 				charaMove(c,d,1,0,floor);
-				if (!keyState[KEY_INPUT_Y])enemyMove(d, floor,nextEnemy);
 			}
-			calc = true;
+			if (!keyState[KEY_INPUT_Y])enemyMove(d, floor);
 		}
 
 		/*Left*/
@@ -313,9 +287,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			else  {
 				charaMove(c,d, -1, 0,floor);
-				if (!keyState[KEY_INPUT_Y])enemyMove(d, floor,nextEnemy);
 			}
-			calc = true;
+			if (!keyState[KEY_INPUT_Y])enemyMove(d, floor);
 		}
 
 		/*Up*/
@@ -325,9 +298,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			else {
 				charaMove(c,d, 0, -1,floor);
-				if (!keyState[KEY_INPUT_Y])enemyMove(d, floor,nextEnemy);
 			}
-			calc = true;
+			if (!keyState[KEY_INPUT_Y])enemyMove(d, floor);
 		}
 
 		/*Down*/
@@ -337,9 +309,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			else {
 				charaMove(c,d, 0, 1,floor);
-				if(!keyState[KEY_INPUT_Y])enemyMove(d, floor,nextEnemy);
 			}
-			calc = true;
+			if(!keyState[KEY_INPUT_Y])enemyMove(d, floor);
 		}
 
 		/*RightUp*/
@@ -357,9 +328,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			else  {										//マップの端でない場合、yを押していないと普通に移動
 				charaMove(c, d, 1, -1,floor);
-				if(!keyState[KEY_INPUT_Y])enemyMove(d, floor,nextEnemy);
 			}
-			calc = true;
+			if(!keyState[KEY_INPUT_Y])enemyMove(d, floor);
 		}
 		/*RightDown*/
 		else if (!menuflag && keyState[KEY_INPUT_C] == 1) {
@@ -377,9 +347,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			else {
 				charaMove(c, d, 1, 1, floor);
-				if(!keyState[KEY_INPUT_Y])enemyMove(d, floor,nextEnemy);
 			}
-			calc = true;
+			if(!keyState[KEY_INPUT_Y])enemyMove(d, floor);
 		}
 
 		/*LeftUp*/
@@ -397,9 +366,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			else {
 				charaMove(c, d, -1, -1, floor);
-				if(!keyState[KEY_INPUT_Y])enemyMove(d, floor,nextEnemy);
 			}
-			calc = true;
+			if(!keyState[KEY_INPUT_Y])enemyMove(d, floor);
 		}
 
 		/*LeftDown*/
@@ -418,8 +386,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 			else {
 				charaMove(c, d, -1, 1, floor);
-				if(!keyState[KEY_INPUT_Y])enemyMove(d, floor,nextEnemy);
 			}
+			if (!keyState[KEY_INPUT_Y])enemyMove(d, floor);
 		}
 
 
@@ -433,12 +401,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		*/
 
 		/*階段移動処理*/
-		if (mapping[floor][SY][SX] == 100) {
+		if (mapping[floor][GY][GX] == 100) {
 			floor += 1;
 			wait(2000,(char*)(floor+1));
 		}
 
-		if (mapping[floor][SY][SX] == 101) {
+		if (mapping[floor][GY][GX] == 101) {
 			floor -= 1;
 			wait(2000,(char*)(floor+1));
 		}
@@ -629,7 +597,7 @@ void attack(pokemon* me, pokemon* enemy, int attackNum) {
 		if ((me->x > enemy->x && me->direction == LEFT) || (me->x < enemy->x && me->direction == RIGHT) || (me->y > enemy->y && me->direction == UP) || (me->y < enemy->y && me->direction == DOWN)) {
 			if (me->skill[attackNum].count > 0) {
 
-				/*確率で攻撃が外れる*/
+				/*2%の確率で攻撃が外れる*/
 				if (getRandom(1, 100) < 98) {
 					enemy->hp -= value;
 					if (enemy->hp < 0)enemy->hp = 0;//hpがマイナスになるのを防ぐ
@@ -820,53 +788,15 @@ bool life(pokemon* enemy, pokemon* me) {
 
 
 /*敵の動き*/
-void enemyMove(pokemon* enemy,int floor,NODE* nextEnemy) {
-
+void enemyMove(pokemon* enemy,int floor) {
 
 	/*敵が同じマップ内にいると、自分に向かってくる*/
 	if (findPokemon(enemy, c)) {
 		/*攻撃しない*/
-		/*移動処理(A*アルゴリズムを後に使用)*/
+		/*移動処理*/
 		if (!isNearPokemon(enemy, c) && enemy->isLive) {
-			//敵の移動法1
-			/*
-			int x = 0; 
-			int y = 0;
-			if (GX - SX < 0)x = -1;
-			else if (GX - SX > 0)x = 1;
-			if (GY - SY < 0)y = -1;
-			else if (GY - SY > 0)y = 1;
-			charaMove(d, c, x, y, floor);
-			*/
-
-			//敵の移動法2
-			charaMove(enemy, c,nextEnemy->x - SX,nextEnemy->y-SY,floor);
-
-			//敵の移動法3
-			/*if (c->x != enemy->x && c->y != enemy->y && c->x < enemy->x && c->y < enemy->y) {
-				charaMove(d,c, -1, -1,floor);
-			}
-			else if (c->x != enemy->x && c->y != enemy->y && c->x < enemy->x && c->y > enemy->y) {
-				charaMove(d,c,-1, 1,floor);
-			}
-			else if (c->x != enemy->x && c->y != enemy->y && c->x > enemy->x && c->y < enemy->y) {
-				charaMove(d,c, 1, -1,floor);
-			}
-			else if (c->x != enemy->x && c->y != enemy->y && c->x > enemy->x && c->y > enemy->y) {
-				charaMove(d,c,1, 1,floor);
-			}
-			else if (c->x != enemy->x && c->x < enemy->x) {
-				charaMove(d,c,-1, 0,floor);
-			}
-			else if (c->x != enemy->x && c->x > enemy->x) {
-				charaMove(d, c,1, 0,floor);
-			}
-			else if (c->y != enemy->y && c->y < enemy->y) {
-				charaMove(d,c, 0, -1,floor);
-			}
-			else if (c->y != enemy->y && c->y > enemy->y) {
-				charaMove(d, c,0, 1,floor);
-			}*/
+			NODE* nextEnemy = Astar(enemy,floor);
+			charaMove(enemy,nextEnemy->x - SX,nextEnemy->y-SY,floor);
 		}
 		/*攻撃する*/
 		else if (isNearPokemon(enemy, c) && c->hp > 0 && enemy->isLive) {
@@ -874,7 +804,7 @@ void enemyMove(pokemon* enemy,int floor,NODE* nextEnemy) {
 			attack(enemy, c, getRandom(0,3));		//ランダムでわざを選ぶ
 		}
 	}
-	/*まだ自分が見つかっていない場合、うろうろする*/
+	/*まだ対象が見つかっていない場合、うろうろする*/
 	else {
 		switch (getRandom(0,8)) {
 		case LEFT:
@@ -1013,72 +943,6 @@ void setDirection(pokemon* me, int direction) {
 	me->direction = direction;
 }
 
-int g(NODE* s, NODE* n) {
-	return n->cost;
-}
-
-//ヒューリスティック関数
-//マンハッタン距離
-int h(NODE* e, NODE* n) {
-	//終点から見た現在のノードまでのコストを計算
-	int cx = e->x - n->x;
-	int cy = e->y - n->y;
-	if (cx < 0)cx *= -1;
-	if (cy < 0)cy *= -1;
-
-	if (cx < cy) {
-		return (cx + (cy - cx));
-	}
-	else {
-		return (cy + (cx - cy));
-	}
-}
-
-void search_node(LIST* open, LIST* close, NODE* s, NODE* e, NODE* n, NODE* mm) {
-	int in_open = -1;
-	int in_close = -1;
-	int i = 0;
-	int fdmcost = g(s, n) + h(e, mm);	//nまで実際にかかるコスト + ヒューリスティック関数値
-	int fsmcost = g(s, mm) + h(e, mm);		//mmまで実際にかかるコスト + ヒューリスティック関数値
-
-	// mがopenリストに含まれているか
-	for (i = 0; i < open->index; i++) {
-		if (open->node[i] != NULL && mm->y == open->node[i]->y && mm->x == open->node[i]->x) {
-			in_open = i;
-			break;
-		}
-	}
-
-	// mがcloseリストに含まれているか
-	for (i = 0; i < close->index; i++) {
-		if (close->node[i] != NULL && mm->y == close->node[i]->y && mm->x == close->node[i]->x) {
-			in_close = i;
-			break;
-		}
-	}
-
-	// m が Openリストにも Closeリストにも含まれていない場合
-	if (in_open == -1 && in_close == -1) {
-		mm->parent = n;
-		open->node[open->index++] = mm;
-	}
-
-	//オープンリストに含まれている場合
-	if (in_open > -1) {
-		if (fdmcost < fsmcost) {
-			mm->parent = n;
-		}
-	}
-
-	//クローズドリストに含まれている場合
-	if (in_close > -1) {
-		if (fdmcost < fsmcost) {
-			mm->parent = n;
-			open->node[open->index++] = mm;	//オープンリストに戻す
-			close->node[in_close] = NULL;
-		}
-	}
-}
 
 void initMessage() {
 	messageflag = false;
@@ -1090,37 +954,75 @@ void initMessage() {
 }
 
 
-NODE* create_node(int y, int x, int cost) {
-	static NODE kkk[NODE_MAX];//これがエラーの原因のような気もする
-	static int index = 0;
-	kkk[index].y = y;
-	kkk[index].x = x;
-	kkk[index].cost = cost;
-	return &kkk[index++];
+void setNode(NODE* child, int x, int y, NODE* parent, int cost,int f) {
+	child->x = x;
+	child->y = y;
+	child->parent = parent;
+	child->cost = cost;
+	child-> f = f;
 }
 
-NODE* Astar(int floor) {
+int getCost() {
+	return 1;
+}
+
+
+int g(NODE* s, NODE* n) {
+	return n->cost;
+}
+
+//ヒューリスティック関数
+//マンハッタン距離
+int h(NODE* e, NODE* n) {
+	//終点から見た現在のノードまでの推定コストを計算
+	int cx = e->x - n->x;
+	int cy = e->y - n->y;
+	if (cx < 0)cx *= -1;
+	if (cy < 0)cy *= -1;
+
+	if (cx < cy) {
+		return (cx + cy);
+	}
+	else {
+		return (cy + cx);
+	}
+}
+
+NODE* Astar(pokemon* enemy,int floor) {
 
 	//結果保持用スタック
 	std::stack<NODE*> st;
-
-	int y = 0;
-	int x = 0;
+	std::map<int, NODE> openList;
+	std::map<int, NODE>closedList;
 	int loop = 0;
 	NODE s = { 0,0,0 };
 	NODE e = { 0,0,0 };
-	LIST open;			//オープンリスト
-	LIST close;			//クローズドリスト
+
 	
-	open.index = 0;
-	close.index = 0;
+	int key[8][2] = {
+		{1,0},
+		{-1,0},
+		{0,-1},
+		{0,1},
+		{1,1},
+		{-1,1},
+		{1,-1},
+		{-1,-1},
+	};
+
+	//open.index = 0;
+	//close.index = 0;
 
 	//スタート
 	//敵の座標
-	s.x = (d->x / CHIP_SIZE - m->x);
-	s.y = (d->y / CHIP_SIZE - m->y);
+	s.x = (enemy->x / CHIP_SIZE - m->x);
+	s.y = (enemy->y / CHIP_SIZE - m->y);
 
-	open.node[open.index++] = &s;
+	//親ノード、コスト、評価値なし
+	setNode(&s, s.x, s.y, NULL, 0, 0);
+	//open.node[open.index++] = &s;
+	//オープンリストに代入
+	openList.insert(KEYDATA(s.x,s.y,s));
 
 	//ゴール
 	//自分の座標
@@ -1128,95 +1030,116 @@ NODE* Astar(int floor) {
 	e.y = (c->y / CHIP_SIZE - m->y);
 
 	while (true) {
-		NODE* n = NULL;
-		for (y = 0; y < open.index; y++) {
-			//yインデックスのオープンリストの中身があれば
-			if (open.node[y] != NULL) {
-				//スタートからオープンリストのノードまでのコスト
-				int cost = g(&s, open.node[y]);
-				if (n == NULL || n->cost > cost) {
-					// ノードの中で一番最小のコストを得る
-					n = open.node[y];
-					open.node[y] = NULL;
-				}
-			}
-		}
+
+		
 
 		// openリストがなくなったので終了する
-		if (n == NULL) {
-			break;
+		if (openList.empty()) { break; }
+		
+		int f_min = 999;
+
+		//展開用
+		NODE *p = new NODE;
+
+		auto it = openList.begin();		//先頭イテレータ取得
+		std::map<int, NODE>::iterator it_min;
+		while (it != openList.end()) {
+			if (f_min > it->second.f) {
+				f_min = it->second.f;
+				it_min = it;
+			}
+			it++;
 		}
+		
+		setNode(
+			p,
+			it_min->second.x, it_min->second.y,
+			it_min->second.parent,
+			it_min->second.cost, it_min->second.f
+		);
+		
 
-		// もしGなら終了する
-		if (n->y == e.y && n->x == e.x) {
+		//親ノードをオープンリストから削除
+		openList.erase(KEY(p->x, p->y));
+		//親ノードをクローズドリストに挿入
+		closedList.insert(KEYDATA(p->x, p->y, *p));
 
-			st.push(n);
-			n = n->parent;
-			while (n->parent != NULL) {
-				st.push(n);
-				n = n->parent;
+		// もしゴールならただちに終了する
+		if (p->y == e.y && p->x == e.x) {
+
+			st.push(p);
+			p = p->parent;
+			while (p->parent != NULL) {
+				st.push(p);
+				p = p->parent;
 			}
 			
 			break;
 		}
 
-		err_no[0] = n->x;
-		err_no[1] = n->y;
-		err_no[2] = open.index;
+		//子ノード展開
+		for (int i = 0; i < 8; i++) {
+			
+			//子ノード評価用
+			NODE* child = new NODE;
+			
+			
+			//周囲8マスを計算
+			int cx = p->x + key[i][0];
+			int cy = p->y + key[i][1];
+			
+			//0以下は通れないので飛ばす
+			if (mapping[floor][cy][cx] <= 0)continue;
 
-		close.node[close.index++] = n;
+			//ノードの実体はほぼ座標
+			child->x = cx;
+			child->y = cy;
+			
+			//仮のコスト、評価値計算
+			int cost = p->cost + getCost();
+			int f = cost + h(&e, child);
+			
+			//最小コストの親のはずなので、先に親を入れてしまう
+			setNode(child, cx, cy, p, cost, f);
 
-		// 上のノードを検索
-		if (mapping[floor][n->y - 1][n->x] > 0) {
-			search_node(&open, &close, &s, &e, n, create_node(n->y - 1, n->x, n->cost + 1));
+			//オープンリスト
+			if (openList.count(KEY(cx, cy))) {
+				auto open_child = openList.find(KEY(cx, cy));
+				//評価値が小さい方の情報を使用
+				if (child->f < open_child->second.f) {
+					openList[KEY(cx,cy)].cost = child->cost;
+					openList[KEY(cx,cy)].f	  = child->f;
+					openList[KEY(cx,cy)].parent = child->parent;
+				}
+			}
+			//クローズドリスト
+			else if (closedList.count(KEY(cx, cy))) {
+				auto closed_child = closedList.find(KEY(cx, cy));
+				//評価値が小さい方の情報を使用
+				if (child->f < closed_child->second.f) {
+					closed_child->second.cost = child->cost;
+					closed_child->second.f = child->f;
+					closed_child->second.parent = child->parent;
+				
+					//オープンリストに戻す
+					openList.insert(KEYDATA(cx,cy,closed_child->second));
+					closedList.erase(KEY(cx, cy));
+				}
+
+			}
+			else {//オープンリストにもクローズドリストにも含まれていない
+				openList.insert(KEYDATA(cx, cy, *child));
+			}
+
+
+			
 		}
 
-		// 右のノードを検索
-		if (mapping[floor][n->y][n->x + 1] > 0) {
-			search_node(&open, &close, &s, &e, n, create_node(n->y, n->x + 1, n->cost + 1));
-		}
-
-		// 下のノードを検索
-		if (mapping[floor][n->y + 1][n->x] > 0) {
-			search_node(&open, &close, &s, &e, n, create_node(n->y + 1, n->x, n->cost + 1));
-		}
-
-		// 左のノードを検索
-		if (mapping[floor][n->y][n->x - 1] > 0) {
-			search_node(&open, &close, &s, &e, n, create_node(n->y, n->x - 1, n->cost + 1));
-		}
-
-		//左上のノードを検索
-		if (mapping[floor][n->y - 1][n->x - 1] > 0) {
-			search_node(&open, &close, &s, &e, n, create_node(n->y - 1, n->x - 1, n->cost + 1));
-		}
-		//右上のノードを検索
-		if (mapping[floor][n->y - 1][n->x + 1] > 0) {
-			search_node(&open, &close, &s, &e, n, create_node(n->y - 1, n->x + 1, n->cost + 1));
-		}
-		//左下のノードを検索
-		if (mapping[floor][n->y + 1][n->x - 1] > 0) {
-			search_node(&open, &close, &s, &e, n, create_node(n->y + 1, n->x - 1, n->cost + 1));
-		}
-		//右下のノードを検索
-		if (mapping[floor][n->y + 1][n->x + 1] > 0) {
-			search_node(&open, &close, &s, &e, n, create_node(n->y + 1, n->x + 1, n->cost + 1));
-		}
-		
 		if (loop++ > 1000) { break; }
 		
 	}
-
-	err_closed = &close;
-	err_closed->index = close.index;
-	
-	err_open = &open;
-	err_open->index = open.index;
 	
 	NODE* node = st.top();
-
-	//次に進むセルに3を入れる
-	mapping[floor][node->y][node->x] = 3;
 
 	
 	return node;
