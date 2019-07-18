@@ -5,6 +5,7 @@ struct maps {
 	int x = 0;
 	int y = 0;
 	int floor = 0;
+
 };
 
 int mapping[3][30][30] = {

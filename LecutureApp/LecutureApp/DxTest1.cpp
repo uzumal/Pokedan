@@ -465,19 +465,18 @@ int init() {
 	c->x = CHIP_SIZE * 3;
 	c->y = CHIP_SIZE * 3;
 	
-	int count = 0;
+	bool flag = 0;
 	for (int i = 0; i < ENEMYNUM; i++) {
 		while (true) {
-			count = 0;
+			flag = true;
 			enemy[i]->x = getRandom(3, 27) * CHIP_SIZE;
 			enemy[i]->y = getRandom(3, 27) * CHIP_SIZE;
 			if (mapping[0][enemy[i]->y/CHIP_SIZE][enemy[i]->x/CHIP_SIZE] > 0) {
 				//”í‚è‚ð–³‚­‚·
 				for (int j = 0; j < i; j++) {
-					if (enemy[i]->x == enemy[j]->x)count++;
-					if (enemy[i]->y == enemy[j]->y)count++;
+					if (enemy[i]->x == enemy[j]->x && enemy[i]->y == enemy[j]->y)flag = false;
 				}
-				if (count == 0)break;
+				if (flag)break;
 			}
 		}
 	}
