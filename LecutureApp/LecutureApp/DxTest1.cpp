@@ -16,8 +16,8 @@
 
 #define GX (c->x/CHIP_SIZE - m->x)
 #define GY (c->y/CHIP_SIZE - m->y)
-#define SX (d->x/CHIP_SIZE - m->x)
-#define SY (d->y/CHIP_SIZE - m->y)
+#define SX(a) (a->x/CHIP_SIZE - m->x)
+#define SY(a) (a->y/CHIP_SIZE - m->y)
 
 #define WHITE	GetColor(255,255,255)
 #define RED		GetColor(255,0,0)
@@ -55,12 +55,22 @@ bool menuflag = false;
 
 /*ポケモン構造体*/
 pokemon poke;
-pokemon dark;
-pokemon dark2;
-pokemon dark3;
+pokemon e1_1;
+pokemon e2_1;
+pokemon e3_1;
+pokemon e1_2;
+pokemon e2_2;
+pokemon e3_2;
+
+pokemon boss1;
+pokemon* b = &boss1;
+
 pokemon* c = &poke;
-//pokemon* d = &dark;
-pokemon* enemy[ENEMYNUM] = {&dark,&dark2,&dark3};
+
+pokemon* enemy[FLOORNUM-1][ENEMYNUM] = {
+	{&e1_1 , &e2_1 , &e3_1},
+	{&e1_2 , &e2_2 , &e3_2},
+};
 
 /*マップ構造体*/
 maps mp;
@@ -80,7 +90,8 @@ int stairs_up;
 int load;
 int load2;
 
-
+/*ミニマップ表示フラグ*/
+int miniMapFlag[FLOORNUM][MAP_YNUM][MAP_XNUM];
 
 /*関数プロトタイプ宣言*/
 int init();										//初期化
@@ -105,12 +116,13 @@ bool isNearPokemon(pokemon*, pokemon*);			//敵が近くにいたら(攻撃圏内にいたら)tr
 bool isNearPokemon2(pokemon*, pokemon*);			//敵が近くにいたら(攻撃圏内にいたら)true
 bool findPokemon(pokemon*, pokemon*);			//敵が発見できる近さにいたら
 bool life(pokemon* enemy, pokemon* me);			//敵死んでいるかどうか
+void randomEnemyPut(pokemon*[ENEMYNUM]);
+void sortEnemy();
 //A*アルゴリズム敵追尾
 int h(NODE*, NODE*);		//ヒューリスティック関数値を返す、マンハッタン距離
 void setNode(NODE* child, int x, int y, NODE* parent, int cost, int f);		//ノードの情報を一気に設定する
 int getCost();				//移動コストを返す、この場合は1を返す
 NODE* Astar(pokemon*);			//A*アルゴリズム適用後、次に進むセルのノードを返す
-
 
 //メッセージ系
 void initConsole();								//メッセージボックスを初期化する
@@ -129,7 +141,9 @@ void drawMiniMap();
 void drawCharacter(pokemon*,int d_num);
 void drawMenu();
 
-pokemon* getAttackEnemy();
+/*攻撃する相手を返す*/
+pokemon* getFrontEnemy();
+bool isNearEnemy(pokemon*,int ,int);
 
 bool isPutMoveKey();
 
@@ -193,6 +207,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int tmp_mx = m->x;
 	int tmp_my = m->y;
 	
+	int distance = 0;
+
 	/*bgm再生開始*/
 	PlaySoundMem(bgm, DX_PLAYTYPE_LOOP);
 
@@ -222,28 +238,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		DrawFormatString(120, 0, WHITE, "HP: %d/ %d",c->hp,c->maxHp);
 		DrawFormatString(220, 0, WHITE, "セットわざ名 : %s",c->skill[c->attackNum].name);
 
-		/*確認用座標(あとで消す)*/
-		DrawFormatString(500, 0,  WHITE, "ピカ座標(%d,%d)", c->x + 20 - m->x * CHIP_SIZE, c->y + 20 - m->y * CHIP_SIZE);
-		DrawFormatString(500, 20, WHITE, "ダー座標(%d,%d)", enemy[0]->x + 20 - m->x * CHIP_SIZE, enemy[0]->y + 20 - m->y * CHIP_SIZE);
-		DrawFormatString(500, 40, WHITE, "マップ座標(%d,%d)", m->x, m->y);
-
-
-		/*階段移動処理*/
-		if (mapping[m->floor][GY][GX] == 100) {
-			m->floor += 1;
-			wait(2000, (char*)(m->floor + 1));
-		}
-
-		if (mapping[m->floor][GY][GX] == 101) {
-			m->floor -= 1;
-			wait(2000, (char*)(m->floor + 1));
-		}
-
+		DrawFormatString(500, 0, WHITE, "1(%d,%d)", enemy[m->floor][0]->x,enemy[m->floor][0]->y);
+		DrawFormatString(500, 20, WHITE, "2(%d,%d)", enemy[m->floor][1]->x,enemy[m->floor][1]->y);
+		DrawFormatString(500, 40, WHITE, "3(%d,%d)",enemy[m->floor][2]->x,enemy[m->floor][2]->y);
 
 		drawCharacter(c, d_num);
 		
 		for (int i = 0; i < ENEMYNUM; i++) {
-			drawCharacter(enemy[i], d_num);
+			drawCharacter(enemy[m->floor][i], d_num);
 		}
 
 		/*メッセージ出力*/
@@ -266,59 +268,129 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			drawMenu();
 		}
 		
-
 		/*Attack*/
 		if (!menuflag && keyState[KEY_INPUT_J] == 1) {
 
-			tmp = getAttackEnemy();
+			tmp = getFrontEnemy();
 			if (tmp != NULL)attack(c, tmp);
 			else attack_for(c);
 
 			for (int i = 0; i < ENEMYNUM; i++) {
-				if (life(enemy[i], c) == FALSE) {
-					enemyMove(enemy[i]);
+				if (life(enemy[m->floor][i], c) == FALSE) {
+					enemyMove(enemy[m->floor][i]);
 				}
 			}
 		}
 		/*Right*/
 		if (!menuflag && keyState[KEY_INPUT_D]==1) {
-			charaMove(c,enemy,1,0);
+			charaMove(c,enemy[m->floor],1,0);
 		}
 		/*Left*/
 		else if (!menuflag && keyState[KEY_INPUT_A]==1) { 
-			charaMove(c,enemy, -1, 0);
+			charaMove(c,enemy[m->floor], -1, 0);
 		}
 		/*Up*/
 		else if (!menuflag && keyState[KEY_INPUT_W]==1) {
-			charaMove(c,enemy, 0, -1);
+			charaMove(c,enemy[m->floor], 0, -1);
 		}
 		/*Down*/
 		else if (!menuflag && keyState[KEY_INPUT_X]==1) {
-			charaMove(c,enemy, 0, 1);
+			charaMove(c,enemy[m->floor], 0, 1);
 		}
 		/*RightUp*/
 		else if (!menuflag && keyState[KEY_INPUT_E] == 1) {
-			charaMove(c, enemy, 1, -1);
+			charaMove(c, enemy[m->floor], 1, -1);
 		}
 		/*RightDown*/
 		else if (!menuflag && keyState[KEY_INPUT_C] == 1) {
-			charaMove(c, enemy, 1, 1);
+			charaMove(c, enemy[m->floor], 1, 1);
 		}
 		/*LeftUp*/
 		else if (!menuflag && keyState[KEY_INPUT_Q] == 1) {
-			charaMove(c, enemy, -1, -1);
+			charaMove(c, enemy[m->floor], -1, -1);
 		}
 		/*LeftDown*/
 		else if (!menuflag && keyState[KEY_INPUT_Z] == 1) {
-			charaMove(c, enemy, -1, 1);
+			charaMove(c, enemy[m->floor], -1, 1);
 		}
 
 		
 		if (!menuflag && isPutMoveKey() && tmp_mx == m->x && tmp_my == m->y) {
-			if (keyState[KEY_INPUT_Y] == 0 && keyState[KEY_INPUT_I] == 0) {
+			if (keyState[KEY_INPUT_Y] == 0) {
+				sortEnemy();
+				
 				for (int i = 0; i < ENEMYNUM; i++) {
-					enemyMove(enemy[i]);
+					enemyMove(enemy[m->floor][i]);
 				}
+			}
+		}
+		/*マップ移動時*/
+		else if (!menuflag && isPutMoveKey() && (tmp_mx != m->x || tmp_my != m->y)) {
+			
+			sortEnemy();
+
+			tmp = NULL;
+			
+			//入れ替わり処理を優先させる
+			for (int i = 0; i < ENEMYNUM; i++) {
+				if (GX == SX(enemy[m->floor][i]) + (m->x - tmp_mx) && GY == SY(enemy[m->floor][i]) + (m->y - tmp_my) ) {
+					charaMove(enemy[m->floor][i], m->x - tmp_mx, m->y - tmp_my);
+					enemy[m->floor][i]->x += (m->x - tmp_mx) * CHIP_SIZE; enemy[m->floor][i]->y += (m->y - tmp_my)*CHIP_SIZE;
+					turnToPokemon(enemy[m->floor][i], c);
+					attack(enemy[m->floor][i], c);
+					tmp = enemy[m->floor][i];
+				}
+			}
+			for (int i = 0; i < ENEMYNUM; i++) {
+				if (tmp == enemy[m->floor][i])continue;
+				if (isNearEnemy(enemy[m->floor][i], 0, 0)) {
+					enemy[m->floor][i]->x += (m->x - tmp_mx) * CHIP_SIZE; enemy[m->floor][i]->y += (m->y - tmp_my) * CHIP_SIZE;
+				}
+			}
+			
+			for (int i = 0; i < ENEMYNUM; i++) {
+				if (tmp == enemy[m->floor][i])continue;
+				
+				charaMove(enemy[m->floor][i], m->x - tmp_mx, m->y - tmp_my);
+				//移動後、前、右、左のどちらかにいたとき
+				if (isNearPokemon(enemy[m->floor][i], c) && (GX + (m->x - tmp_mx) != SX(enemy[m->floor][i]) && GY + (m->y - tmp_my) != SY(enemy[m->floor][i]))) {
+					turnToPokemon(enemy[m->floor][i], c);
+					attack(enemy[m->floor][i], c);
+				}
+				//ななめにいるとき
+				else if (!isNearPokemon(enemy[m->floor][i],c) && isNearPokemon2(enemy[m->floor][i], c)) {
+					charaMove(enemy[m->floor][i], (c->x - enemy[m->floor][i]->x) / CHIP_SIZE, (c->y - enemy[m->floor][i]->y) / CHIP_SIZE);
+				}
+				//8方にいるとき
+				else if (isNearPokemon(enemy[m->floor][i], c)) {
+					turnToPokemon(enemy[m->floor][i], c);
+				}
+				
+				else {
+					NODE* n = Astar(enemy[m->floor][i]);
+					if (n != NULL)charaMove(enemy[m->floor][i], n->x - SX(enemy[m->floor][i]), n->y - SY(enemy[m->floor][i]));
+				}
+				
+			}
+		}
+
+
+		/*階段移動処理*/
+		if (mapping[m->floor][GY][GX] == 100) {
+			m->floor += 1;
+			sprintf_s(s, "はじまりのダンジョン\n　　　　B%dF", m->floor + 1);
+			wait(2000, s);
+			if (m->floor != 2) {
+				randomEnemyPut(enemy[m->floor]);
+			}
+		}
+
+		if (mapping[m->floor][GY][GX] == 101) {
+			m->floor -= 1;
+			sprintf_s(s, "はじまりのダンジョン\n　　　　B%dF", m->floor + 1);
+			wait(2000, s);
+			if (m->floor != 2) {
+				randomEnemyPut(enemy[m->floor]);
 			}
 		}
 
@@ -348,7 +420,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 void wait(int ms,char* s) {
 	int tmp = GetNowCount();
 	while (ScreenFlip() == 0 && ProcessMessage() == 0 && ClearDrawScreen() == 0 && GetNowCount() - tmp < ms) {
-		DrawFormatString(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, GetColor(255,255,255), "B%dF", s);
+		DrawFormatString(SCREEN_WIDTH / 2 - 80, SCREEN_HEIGHT / 2, GetColor(255,255,255), "%s", s);
 	}
 }
 
@@ -373,9 +445,11 @@ int init() {
 
 	/*後々自分の名前を入力させる*/
 	c->name = "ピカチュウ";
-	enemy[0]->name = "ダークライ";
-	enemy[1]->name = "ダークライ";
-	enemy[2]->name = "ダークライ";
+	for (int i = 0; i < FLOORNUM-1; i++) {
+		enemy[i][0]->name = "ダークライ";
+		enemy[i][1]->name = "フシギダネ";
+		enemy[i][2]->name = "スイクン";
+	}
 
 	/*画像のロード*/
 	c->moveTexture[DOWN][0] = LoadGraph("画像/ピカチュウd_1.png");
@@ -411,44 +485,117 @@ int init() {
 	c->hp = 30;
 
 	skillfull(0);
+	for (int i = 0; i < FLOORNUM-1; i++) {
+		enemy[i][0]->moveTexture[DOWN][0] = LoadGraph("画像/ダークライd_1.png");
+		enemy[i][0]->moveTexture[DOWN][1] = LoadGraph("画像/ダークライd_2.png");
+		enemy[i][0]->moveTexture[UP][0] = LoadGraph("画像/ダークライu_1.png");
+		enemy[i][0]->moveTexture[UP][1] = LoadGraph("画像/ダークライu_2.png");
+		enemy[i][0]->moveTexture[LEFT][0] = LoadGraph("画像/ダークライl_1.png");
+		enemy[i][0]->moveTexture[LEFT][1] = LoadGraph("画像/ダークライl_2.png");
+		enemy[i][0]->moveTexture[RIGHT][0] = LoadGraph("画像/ダークライr_1.png");
+		enemy[i][0]->moveTexture[RIGHT][1] = LoadGraph("画像/ダークライr_2.png");
 
-	for (int i = 0; i < ENEMYNUM; i++) {
-		enemy[i]->moveTexture[DOWN][0] = LoadGraph("画像/ダークライd_1.png");
-		enemy[i]->moveTexture[DOWN][1] = LoadGraph("画像/ダークライd_2.png");
-		enemy[i]->moveTexture[UP][0] = LoadGraph("画像/ダークライu_1.png");
-		enemy[i]->moveTexture[UP][1] = LoadGraph("画像/ダークライu_2.png");
-		enemy[i]->moveTexture[LEFT][0] = LoadGraph("画像/ダークライl_1.png");
-		enemy[i]->moveTexture[LEFT][1] = LoadGraph("画像/ダークライl_2.png");
-		enemy[i]->moveTexture[RIGHT][0] = LoadGraph("画像/ダークライr_1.png");
-		enemy[i]->moveTexture[RIGHT][1] = LoadGraph("画像/ダークライr_2.png");
+		enemy[i][0]->skill[0].name = "でんこうせっか";
+		enemy[i][0]->skill[1].name = "だましうち";
+		enemy[i][0]->skill[2].name = "あくのはどう";
+		enemy[i][0]->skill[3].name = "れいとうビーム";
 
-		enemy[i]->skill[0].name = "でんこうせっか";
-		enemy[i]->skill[1].name = "だましうち";
-		enemy[i]->skill[2].name = "あくのはどう";
-		enemy[i]->skill[3].name = "れいとうビーム";
-
-		enemy[i]->skill[0].value = 2;
-		enemy[i]->skill[1].value = 7;
-		enemy[i]->skill[2].value = 10;
-		enemy[i]->skill[3].value = 3;
+		enemy[i][0]->skill[0].value = 2;
+		enemy[i][0]->skill[1].value = 7;
+		enemy[i][0]->skill[2].value = 10;
+		enemy[i][0]->skill[3].value = 3;
 
 
-		enemy[i]->skill[0].maxCount = 20;
-		enemy[i]->skill[1].maxCount = 10;
-		enemy[i]->skill[2].maxCount = 20;
-		enemy[i]->skill[3].maxCount = 10;
+		enemy[i][0]->skill[0].maxCount = 20;
+		enemy[i][0]->skill[1].maxCount = 10;
+		enemy[i][0]->skill[2].maxCount = 20;
+		enemy[i][0]->skill[3].maxCount = 10;
 
-		enemy[i]->skill[0].count = c->skill[0].maxCount;
-		enemy[i]->skill[1].count = c->skill[1].maxCount;
-		enemy[i]->skill[2].count = c->skill[2].maxCount;
-		enemy[i]->skill[3].count = c->skill[3].maxCount;
+		enemy[i][0]->skill[0].count = c->skill[0].maxCount;
+		enemy[i][0]->skill[1].count = c->skill[1].maxCount;
+		enemy[i][0]->skill[2].count = c->skill[2].maxCount;
+		enemy[i][0]->skill[3].count = c->skill[3].maxCount;
 
-		enemy[i]->voice = LoadSoundMem("音楽/ダークライvoice.mp3");
+		enemy[i][0]->voice = LoadSoundMem("音楽/ダークライvoice.mp3");
 
-		enemy[i]->experience = 10000;
+		enemy[i][0]->experience = 10000;
 
-		enemy[i]->maxHp = 70;
-		enemy[i]->hp = 70;
+		enemy[i][0]->maxHp = 70;
+		enemy[i][0]->hp = 70;
+
+		enemy[i][1]->moveTexture[DOWN][0] = LoadGraph("画像/フシギダネd_1.png");
+		enemy[i][1]->moveTexture[DOWN][1] = LoadGraph("画像/フシギダネd_2.png");
+		enemy[i][1]->moveTexture[UP][0] = LoadGraph("画像/フシギダネu_1.png");
+		enemy[i][1]->moveTexture[UP][1] = LoadGraph("画像/フシギダネu_2.png");
+		enemy[i][1]->moveTexture[LEFT][0] = LoadGraph("画像/フシギダネl_1.png");
+		enemy[i][1]->moveTexture[LEFT][1] = LoadGraph("画像/フシギダネl_2.png");
+		enemy[i][1]->moveTexture[RIGHT][0] = LoadGraph("画像/フシギダネr_1.png");
+		enemy[i][1]->moveTexture[RIGHT][1] = LoadGraph("画像/フシギダネr_2.png");
+
+		enemy[i][1]->skill[0].name = "はっぱカッター";
+		enemy[i][1]->skill[1].name = "でんこうせっか";
+		enemy[i][1]->skill[2].name = "あくのはどう";
+		enemy[i][1]->skill[3].name = "たいあたり";
+
+		enemy[i][1]->skill[0].value = 5;
+		enemy[i][1]->skill[1].value = 10;
+		enemy[i][1]->skill[2].value = 4;
+		enemy[i][1]->skill[3].value = 11;
+
+
+		enemy[i][1]->skill[0].maxCount = 10;
+		enemy[i][1]->skill[1].maxCount = 5;
+		enemy[i][1]->skill[2].maxCount = 10;
+		enemy[i][1]->skill[3].maxCount = 10;
+
+		enemy[i][1]->skill[0].count = c->skill[0].maxCount;
+		enemy[i][1]->skill[1].count = c->skill[1].maxCount;
+		enemy[i][1]->skill[2].count = c->skill[2].maxCount;
+		enemy[i][1]->skill[3].count = c->skill[3].maxCount;
+
+		enemy[i][1]->voice = LoadSoundMem("音楽/フシギダネvoice.mp3");
+
+		enemy[i][1]->experience = 10000;
+
+		enemy[i][1]->maxHp = 70;
+		enemy[i][1]->hp = 70;
+
+		enemy[i][2]->moveTexture[DOWN][0] = LoadGraph("画像/スイクンd_1.png");
+		enemy[i][2]->moveTexture[DOWN][1] = LoadGraph("画像/スイクンd_2.png");
+		enemy[i][2]->moveTexture[UP][0] = LoadGraph("画像/スイクンu_1.png");
+		enemy[i][2]->moveTexture[UP][1] = LoadGraph("画像/スイクンu_2.png");
+		enemy[i][2]->moveTexture[LEFT][0] = LoadGraph("画像/スイクンl_1.png");
+		enemy[i][2]->moveTexture[LEFT][1] = LoadGraph("画像/スイクンl_2.png");
+		enemy[i][2]->moveTexture[RIGHT][0] = LoadGraph("画像/スイクンr_1.png");
+		enemy[i][2]->moveTexture[RIGHT][1] = LoadGraph("画像/スイクンr_2.png");
+
+		enemy[i][2]->skill[0].name = "みずでっぽう";
+		enemy[i][2]->skill[1].name = "ハイドロポンプ";
+		enemy[i][2]->skill[2].name = "あくのはどう";
+		enemy[i][2]->skill[3].name = "あわ";
+
+		enemy[i][2]->skill[0].value = 5;
+		enemy[i][2]->skill[1].value = 10;
+		enemy[i][2]->skill[2].value = 4;
+		enemy[i][2]->skill[3].value = 11;
+
+
+		enemy[i][2]->skill[0].maxCount = 10;
+		enemy[i][2]->skill[1].maxCount = 5;
+		enemy[i][2]->skill[2].maxCount = 10;
+		enemy[i][2]->skill[3].maxCount = 10;
+
+		enemy[i][2]->skill[0].count = c->skill[0].maxCount;
+		enemy[i][2]->skill[1].count = c->skill[1].maxCount;
+		enemy[i][2]->skill[2].count = c->skill[2].maxCount;
+		enemy[i][2]->skill[3].count = c->skill[3].maxCount;
+
+		enemy[i][2]->voice = LoadSoundMem("音楽/スイクンvoice.mp3");
+
+		enemy[i][2]->experience = 10000;
+
+		enemy[i][2]->maxHp = 70;
+		enemy[i][2]->hp = 70;
 	}
 	/*階段の画像*/
 	stairs_down = LoadGraph("画像/stairs.png");
@@ -465,23 +612,7 @@ int init() {
 	c->x = CHIP_SIZE * 3;
 	c->y = CHIP_SIZE * 3;
 	
-	bool flag = 0;
-	for (int i = 0; i < ENEMYNUM; i++) {
-		while (true) {
-			flag = true;
-			enemy[i]->x = getRandom(3, 27) * CHIP_SIZE;
-			enemy[i]->y = getRandom(3, 27) * CHIP_SIZE;
-			if (mapping[0][enemy[i]->y/CHIP_SIZE][enemy[i]->x/CHIP_SIZE] > 0) {
-				//被りを無くす
-				for (int j = 0; j < i; j++) {
-					if (enemy[i]->x == enemy[j]->x && enemy[i]->y == enemy[j]->y)flag = false;
-				}
-				if (flag)break;
-			}
-		}
-	}
-
-
+	randomEnemyPut(enemy[m->floor]);
 
 	/*音声をロード*/
 	slap = LoadSoundMem("音楽/slap1.mp3");
@@ -505,16 +636,17 @@ void skillfull(int level) {
 	c->skill[3].min = 1 + level * 2;
 	c->skill[3].max = 3 + level * 2;
 
-	for (int i = 0; i < ENEMYNUM; i++) {
-
-		enemy[i]->skill[0].min = 2;
-		enemy[i]->skill[0].max = 4;
-		enemy[i]->skill[1].min = 3;
-		enemy[i]->skill[1].max = 6;
-		enemy[i]->skill[2].min = 8;
-		enemy[i]->skill[2].max = 14;
-		enemy[i]->skill[3].min = 4;
-		enemy[i]->skill[3].max = 8;
+	for (int j = 0; j < FLOORNUM - 1; j++) {
+		for (int i = 0; i < ENEMYNUM; i++) {
+			enemy[j][i]->skill[0].min = 2;
+			enemy[j][i]->skill[0].max = 4;
+			enemy[j][i]->skill[1].min = 3;
+			enemy[j][i]->skill[1].max = 6;
+			enemy[j][i]->skill[2].min = 8;
+			enemy[j][i]->skill[2].max = 14;
+			enemy[j][i]->skill[3].min = 4;
+			enemy[j][i]->skill[3].max = 8;
+		}
 	}
 }
 
@@ -579,7 +711,6 @@ void attack_for(pokemon* me) {
 
 /*攻撃時に敵の方を向く*/
 /*のちに向かせる前に画像を敷いてダブリを無くす*/
-/*もしくは向いている方向に攻撃させるのでこれは消すかも?*/
 void turnToPokemon(pokemon* me, pokemon* enemy) {
 	if (me->x > enemy->x)me->direction = LEFT;
 	else if (me->x < enemy->x)me->direction = RIGHT;
@@ -816,13 +947,13 @@ void charaMove(pokemon* me,pokemon* enemy[ENEMYNUM], int x, int y) {
 	int my = 0;
 
 	/*移動先のセル確認*/
-	int nextCell = mapping[m->floor][me->y / CHIP_SIZE - m->y + y][me->x  / CHIP_SIZE - m->x + x];
+	int nextCell = mapping[m->floor][GY + y][GX + x];
 
 	/*ななめ移動のとき*/
 	if ((x == 1 || x == -1) && (y == 1 || y == -1)) {
 
-		int nextCell_x = mapping[m->floor][me->y / CHIP_SIZE - m->y][me->x / CHIP_SIZE - m->x + x];	//自分の左右どちらかのセルの状態
-		int nextCell_y = mapping[m->floor][me->y / CHIP_SIZE - m->y + y][me->x / CHIP_SIZE - m->x];	//自分の上下どちらかのセルの状態
+		int nextCell_x = mapping[m->floor][GY][GX + x];	//自分の左右どちらかのセルの状態
+		int nextCell_y = mapping[m->floor][GY + y][GX];	//自分の上下どちらかのセルの状態
 
 		//進む先が障害物で、左右どちらか、上下どちらかが道であれば滑る
 		if (nextCell <= 0 && !keyState[KEY_INPUT_Y]) {
@@ -842,17 +973,20 @@ void charaMove(pokemon* me,pokemon* enemy[ENEMYNUM], int x, int y) {
 	}
 
 	//nextCellの更新
-	nextCell = mapping[m->floor][me->y / CHIP_SIZE - m->y + y][me->x / CHIP_SIZE - m->x + x];
+	nextCell = mapping[m->floor][GY + y][GX + x];
 
 	if (nextCell > 0 && !keyState[KEY_INPUT_Y]) {
 		/*移動先に敵がいたら入れ替わる*/
 		for (int i = 0; i < ENEMYNUM; i++) {
-			if (me->x + x * CHIP_SIZE == enemy[i]->x && me->y + y * CHIP_SIZE == enemy[i]->y) { enemy[i]->x = me->x; enemy[i]->y = me->y; }
+			if (me->x / CHIP_SIZE + x == enemy[i]->x / CHIP_SIZE && me->y / CHIP_SIZE + y == enemy[i]->y / CHIP_SIZE) charaMove(enemy[i], x*(-1), y*(-1)); 
 		}
-			me->x += x * CHIP_SIZE;
-			me->y += y * CHIP_SIZE;
+		me->x += x * CHIP_SIZE;
+		me->y += y * CHIP_SIZE;
+		for (int i = 0; i < ENEMYNUM; i++) {
+			if (me->x / CHIP_SIZE  == enemy[i]->x / CHIP_SIZE && me->y / CHIP_SIZE == enemy[i]->y / CHIP_SIZE) charaMove(enemy[i], x * (-1), y * (-1));
+		}
 	}
-
+	
 	//マップ移動があれば
 	if (!(mx == 0 && my == 0)) {
 		mapMove(m, me, enemy, mx, my);
@@ -870,8 +1004,8 @@ void charaMove(pokemon* me, int x, int y) {
 
 	int tmpX = (me->x - c->x)/CHIP_SIZE;
 	int tmpY = (me->y - c->y)/CHIP_SIZE;
-	int nextCell_x = mapping[m->floor][me->y / CHIP_SIZE - m->y][me->x / CHIP_SIZE - m->x + x];
-	int nextCell_y = mapping[m->floor][me->y / CHIP_SIZE - m->y + y][me->x / CHIP_SIZE - m->x];
+	int nextCell_x = mapping[m->floor][SY(me)][SX(me) + x];
+	int nextCell_y = mapping[m->floor][SY(me) + y][SX(me)];
 
 	//ななめ移動時に、ななめに主人公がいれば
 	if ((x == 1 || x == -1) && (y == 1 || y == -1)) {
@@ -881,10 +1015,11 @@ void charaMove(pokemon* me, int x, int y) {
 			else if (nextCell_y > 0)x = 0;
 		}
 	}
-	/*移動先のセル確認*/
-	int nextCell = mapping[m->floor][me->y / CHIP_SIZE - m->y + y][me->x / CHIP_SIZE - m->x + x];
 
-	if (nextCell > 0) {
+	/*移動先のセル確認*/
+	int nextCell = mapping[m->floor][SY(me) + y][SX(me) + x];
+
+	if (nextCell > 0 && !isNearEnemy(me,x,y)) {
 		me->x += x * CHIP_SIZE;
 		me->y += y * CHIP_SIZE;
 	}
@@ -896,21 +1031,23 @@ void mapMove(maps* m,pokemon* me,pokemon* enemy[ENEMYNUM], int x, int y) {
 
 	//移動処理と引っ掛かり処理
 	if (nextCell > 0 && !keyState[KEY_INPUT_Y]) {
+		for (int i = 0; i < ENEMYNUM; i++) {
+			int nextEnemyCell = mapping[m->floor][enemy[i]->y / CHIP_SIZE - m->y - y][enemy[i]->x / CHIP_SIZE - m->x - x];
+			if (nextEnemyCell <= 0)charaMove(enemy[i], x, y);
+		}
 		m->x += x;
 		m->y += y;
-		for (int i = 0; i < ENEMYNUM; i++) {
-			int enemyCell = mapping[m->floor][enemy[i]->y / CHIP_SIZE - m->y][enemy[i]->x / CHIP_SIZE - m->x];
-			if (enemyCell <= 0)charaMove(enemy[i], x, y);
-		}
 	}
 
 }
 
+//向きをセット
 void setDirection(pokemon* me, int direction) {
 	me->direction = direction;
 }
 
 
+//メッセージ初期化
 void initMessage() {
 	messageflag = false;
 	for (int i = 0; i < 256; i++) {
@@ -933,10 +1070,6 @@ int getCost() {
 	return 1;
 }
 
-
-int g(NODE* s, NODE* n) {
-	return n->cost;
-}
 
 //ヒューリスティック関数
 //マンハッタン距離
@@ -977,8 +1110,6 @@ NODE* Astar(pokemon* enemy) {
 		{-1,-1},
 	};
 
-	//open.index = 0;
-	//close.index = 0;
 
 	//スタート
 	//敵の座標
@@ -1001,9 +1132,9 @@ NODE* Astar(pokemon* enemy) {
 		
 
 		// openリストがなくなったので終了する
-		if (openList.empty()) { break; }
+		if (openList.empty()) { return NULL; }
 		
-		int f_min = 999;
+		int f_min = 9999;
 
 		//展開用
 		NODE *p = new NODE;
@@ -1032,7 +1163,8 @@ NODE* Astar(pokemon* enemy) {
 		closedList.insert(KEYDATA(p->x, p->y, *p));
 
 		// もしゴールならただちに終了する
-		if (p->y == e.y && p->x == e.x) {
+		//ゴールは8方に設定
+		if ((p->x == e.x && (p->y == e.y + 1|| p->y == e.y - 1)) || (p->y == e.y && (p->x == e.x + 1 || p->x == e.x - 1))) {
 
 			st.push(p);
 			p = p->parent;
@@ -1058,7 +1190,7 @@ NODE* Astar(pokemon* enemy) {
 			//0以下は通れないので飛ばす
 			if (mapping[m->floor][cy][cx] <= 0)continue;
 
-			//ノードの実体はほぼ座標
+			//ノードの実体(座標)
 			child->x = cx;
 			child->y = cy;
 			
@@ -1137,12 +1269,19 @@ void drawCharacter(pokemon* me, int d_num) {
 }
 
 void drawMiniMap() {
-	for (int i = 0; i < 30; i++) {
-		for (int j = 0; j < 30; j++) {
-			if (mapping[m->floor][j][i] == 1 || mapping[m->floor][j][i] == 2)DrawFormatString(i * 3, j * 3, WHITE, ".");
+
+	for (int i = GX - 1; i <= GX + 1; i++) {
+		for (int j = GY - 1; j <= GY + 1; j++) {
+			miniMapFlag[m->floor][j][i] = 1;
+		}
+	}
+
+	for (int i = 0; i < MAP_XNUM; i++) {
+		for (int j = 0; j < MAP_YNUM; j++) {
+			if ((mapping[m->floor][j][i] == 1 || mapping[m->floor][j][i] == 2) && miniMapFlag[m->floor][j][i]==1)DrawFormatString(i * 3, j * 3, WHITE, ".");
 			if (i == GX && j == GY)DrawFormatString(i * 3, j * 3, RED, ".");
 			for (int k = 0; k < ENEMYNUM; k++) {
-				if (i == enemy[k]->x/CHIP_SIZE - m->x && j == enemy[k]->y/CHIP_SIZE - m->y && enemy[k]->isLive)DrawFormatString(i * 3, j * 3, BLUE, ".");
+				if (i == SX(enemy[m->floor][k]) && j == SY(enemy[m->floor][k]) && enemy[m->floor][k]->isLive)DrawFormatString(i * 3, j * 3, BLUE, ".");
 			}
 			if (mapping[m->floor][j][i] == 100)DrawFormatString(i * 3, j * 3, GREEN, ".");
 			if (mapping[m->floor][j][i] == 101)DrawFormatString(i * 3, j * 3, GREEN, ".");
@@ -1173,38 +1312,109 @@ bool isPutMoveKey() {
 
 }
 
-pokemon* getAttackEnemy() {
+pokemon* getFrontEnemy() {
 	
 	for (int i = 0; i < ENEMYNUM; i++) {
 
 		if (c->direction == UP) {
-			if (c->x == enemy[i]->x && c->y - CHIP_SIZE == enemy[i]->y) {
-				if (enemy[i]->isLive) {
-					return enemy[i];
+			if (c->x == enemy[m->floor][i]->x && c->y - CHIP_SIZE == enemy[m->floor][i]->y) {
+				if (enemy[m->floor][i]->isLive) {
+					return enemy[m->floor][i];
 				}
 			}
 		}
 		else if (c->direction == RIGHT) {
-			if (c->y == enemy[i]->y && c->x + CHIP_SIZE == enemy[i]->x) {
-				if (enemy[i]->isLive) {
-					return enemy[i];
+			if (c->y == enemy[m->floor][i]->y && c->x + CHIP_SIZE == enemy[m->floor][i]->x) {
+				if (enemy[m->floor][i]->isLive) {
+					return enemy[m->floor][i];
 				}
 			}
 		}
 		else if (c->direction == DOWN) {
-			if (c->x == enemy[i]->x && c->y + CHIP_SIZE == enemy[i]->y) {
-				if (enemy[i]->isLive) {
-					return enemy[i];
+			if (c->x == enemy[m->floor][i]->x && c->y + CHIP_SIZE == enemy[m->floor][i]->y) {
+				if (enemy[m->floor][i]->isLive) {
+					return enemy[m->floor][i];
 				}
 			}
 		}
 		else if (c->direction == LEFT) {
-			if (c->y == enemy[i]->y && c->x - CHIP_SIZE == enemy[i]->x) {
-				if (enemy[i]->isLive) {
-					return enemy[i];
+			if (c->y == enemy[m->floor][i]->y && c->x - CHIP_SIZE == enemy[m->floor][i]->x) {
+				if (enemy[m->floor][i]->isLive) {
+					return enemy[m->floor][i];
 				}
 			}
 		}
 	}
 	return NULL;
+}
+
+bool isNearEnemy(pokemon* e,int x,int y) {
+
+	for (int i = 0; i < ENEMYNUM; i++) {
+		if (enemy[m->floor][i] != e) {
+			//移動先に既に敵がいる場合
+			if (enemy[m->floor][i]->isLive) {
+				if (SX(e) + x == SX(enemy[m->floor][i]) && (SY(e) + y == SY(enemy[m->floor][i])))return true;
+			}
+		}
+	}
+	return false;
+
+}
+
+void randomEnemyPut(pokemon* e[ENEMYNUM]) {
+	bool flag = 0;
+	for (int i = 0; i < ENEMYNUM; i++) {
+		while (true) {
+			flag = true;
+			e[i]->x = getRandom(5, 30) * CHIP_SIZE;
+			e[i]->y = getRandom(5, 30) * CHIP_SIZE;
+			if (mapping[m->floor][SY(e[i])][SX(e[i])] > 0) {
+				//被りを無くす
+				for (int j = 0; j < i; j++) {
+					if ((SX(e[i]) == SX(e[j]) && SY(e[i]) == SX(e[j])) || (SX(e[i]) == GX && SY(e[i]) == GY))flag = false;
+				}
+				if (flag)break;
+			}
+		}
+	}
+}
+
+void sortEnemy() {
+	pokemon* enemy_tmp[ENEMYNUM];
+	bool enFlag = false;
+	int sx = 0;
+	int sy = 0;
+	for (int i = 0; i < ENEMYNUM; i++) {
+		int distance = 9999;
+		for (int j = 0; j < ENEMYNUM; j++) {
+			enFlag = false;
+			sx = GX - SX(enemy[m->floor][j]);
+			if (sx < 0)sx *= -1;
+			sy = GY - SY(enemy[m->floor][j]);
+			if (sy < 0)sy *= -1;
+			//一番近い敵からenemy_tmpに格納していく
+			if (distance > sx + sy) {
+				//最初は被りがないので素直に一番近い敵を格納
+				if (i == 0) {
+					distance = sx + sy;
+					enemy_tmp[i] = enemy[m->floor][j];
+				}
+
+				//二回目以降は被りを無視する
+				else {
+					//既にenemy_tmpに含まれている要素は無視する
+					for (int k = 0; k < ENEMYNUM; k++) {
+						if (enemy[m->floor][j] == enemy_tmp[k])enFlag = true;
+					}
+					if (enFlag)continue;
+					distance = sx + sy;
+					enemy_tmp[i] = enemy[m->floor][j];
+				}
+			}
+		}
+	}
+	for (int i = 0; i < ENEMYNUM; i++) {
+		enemy[m->floor][i] = enemy_tmp[i];
+	}
 }
