@@ -1,30 +1,38 @@
 #pragma once
-#include "all.h"
-#include "Map.cpp"
-#include "Character.cpp"
-#include "Generic.cpp"
-#include "Message.cpp"
+#include "allVariableName.h"
+#include "Message.h"
+#include "Generic.h"
+#include "Character.h"
 #include <map>
 #include <stack>
 
 
-/*ポケモン構造体*/
 pokemon e1_1;
 pokemon e2_1;
 pokemon e3_1;
 pokemon e1_2;
 pokemon e2_2;
 pokemon e3_2;
-
 pokemon boss1;
 pokemon* b = &boss1;
-
-
 
 pokemon* enemy[FLOORNUM - 1][ENEMYNUM] = {
 	{ &e1_1 , &e2_1 , &e3_1 },
 	{ &e1_2 , &e2_2 , &e3_2 },
 };
+
+/*プロトタイプ宣言*/
+void turnToPokemon(pokemon* me, pokemon* enemy);
+NODE* Astar(pokemon* enemy);
+bool life(pokemon* enemy, pokemon* me);
+bool isNearPokemon(pokemon* me, pokemon* enemy);
+bool isNearPokemon2(pokemon* me, pokemon* enemy);
+bool findPokemon(pokemon* me, pokemon* enemy);
+void charaMoveEnemy(pokemon* me, int x, int y);
+bool isNearEnemy(pokemon* e, int x, int y);
+void enemyMove(pokemon* enemy);
+void randomEnemyPut(pokemon* e[ENEMYNUM]);
+void sortEnemy();
 
 
 /*攻撃時に敵の方を向く*/
@@ -279,7 +287,7 @@ bool findPokemon(pokemon* me, pokemon* enemy) {
 	else return false;
 }
 								/*敵用の処理,入れ替わり処理を無くした*/
-void charaMove(pokemon* me, int x, int y) {
+void charaMoveEnemy(pokemon* me, int x, int y) {
 
 	if (x == 1)setDirection(me, RIGHT);
 	else if (x == -1)setDirection(me, LEFT);
@@ -344,40 +352,40 @@ void enemyMove(pokemon* enemy) {
 		}
 		/*8方(ここではななめ)にいるとき、攻撃できる範囲に移動する*/
 		else if (isNearPokemon2(enemy, c)) {
-			charaMove(enemy, (c->x - enemy->x) / CHIP_SIZE, (c->y - enemy->y) / CHIP_SIZE);	//攻撃できるところに移動する
+			charaMoveEnemy(enemy, (c->x - enemy->x) / CHIP_SIZE, (c->y - enemy->y) / CHIP_SIZE);	//攻撃できるところに移動する
 		}
 		/*8方にいないときはA*アルゴリズム*/
 		else if (!isNearPokemon2(enemy, c)) {
 			NODE* nextEnemy = Astar(enemy);
-			charaMove(enemy, nextEnemy->x - sx, nextEnemy->y - sy);
+			charaMoveEnemy(enemy, nextEnemy->x - sx, nextEnemy->y - sy);
 		}
 	}
 	/*まだ対象が見つかっていない場合、うろうろする*/
 	else {
 		switch (getRandom(0, 8)) {
 		case LEFT:
-			charaMove(enemy, -1, 0);
+			charaMoveEnemy(enemy, -1, 0);
 			break;
 		case RIGHT:
-			charaMove(enemy, 1, 0);
+			charaMoveEnemy(enemy, 1, 0);
 			break;
 		case UP:
-			charaMove(enemy, 0, -1);
+			charaMoveEnemy(enemy, 0, -1);
 			break;
 		case DOWN:
-			charaMove(enemy, 0, 1);
+			charaMoveEnemy(enemy, 0, 1);
 			break;
 		case LEFT_UP:
-			charaMove(enemy, -1, -1);
+			charaMoveEnemy(enemy, -1, -1);
 			break;
 		case LEFT_DOWN:
-			charaMove(enemy, -1, 1);
+			charaMoveEnemy(enemy, -1, 1);
 			break;
 		case RIGHT_UP:
-			charaMove(enemy, 1, -1);
+			charaMoveEnemy(enemy, 1, -1);
 			break;
 		case RIGHT_DOWN:
-			charaMove(enemy, 1, 1);
+			charaMoveEnemy(enemy, 1, 1);
 			break;
 		default:
 			break;

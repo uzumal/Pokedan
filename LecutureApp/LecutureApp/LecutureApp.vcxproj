@@ -135,9 +135,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="all.h" />
+    <ClInclude Include="allMethod.h" />
+    <ClInclude Include="allVariableName.h" />
     <ClInclude Include="anode.h" />
+    <ClInclude Include="Character.h" />
     <ClInclude Include="define.h" />
+    <ClInclude Include="Enemy.h" />
+    <ClInclude Include="Generic.h" />
+    <ClInclude Include="Map.h" />
+    <ClInclude Include="mapping.h" />
     <ClInclude Include="maps.h" />
+    <ClInclude Include="Menu.h" />
+    <ClInclude Include="Message.h" />
     <ClInclude Include="pokemon.h" />
     <ClInclude Include="skill.h" />
   </ItemGroup>

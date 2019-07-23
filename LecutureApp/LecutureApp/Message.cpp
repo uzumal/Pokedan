@@ -1,16 +1,15 @@
 #pragma once
-#include "all.h"
-#include "Generic.cpp"
+#include "allVariableName.h"
 
-/*コンソール表示用変数*/
+
 char message1[256];
 char message2[256];
 char message3[256];
 char s[256];				//sprintf_s用の配列
 
 int messageBox;
-
-bool messageflag = false;	//メッセージを表示するか
+bool menuflag = false;
+bool messageflag = false;
 
 /*下のコンソール初期化*/
 void initConsole() {

@@ -1,15 +1,15 @@
 #pragma once
-#include "all.h"
-#include "Enemy.cpp"
-#include "Generic.cpp"
-
-
-/*ミニマップ表示フラグ*/
-int miniMapFlag[FLOORNUM][MAP_YNUM][MAP_XNUM];
+#include "allVariableName.h"
+#include "Generic.h"
+#include "Enemy.h"
+#include "Character.h"
 
 /*マップ構造体*/
 maps mp;
-extern maps* m = &mp;
+maps* m = &mp;
+
+/*ミニマップ表示フラグ*/
+int miniMapFlag[FLOORNUM][MAP_YNUM][MAP_XNUM];
 
 
 void stairsMove(int stairs) {
@@ -29,7 +29,7 @@ void mapMove(maps* m, pokemon* me, pokemon* enemy[ENEMYNUM], int x, int y) {
 	if (nextCell > 0 && !keyState[KEY_INPUT_Y]) {
 		for (int i = 0; i < ENEMYNUM; i++) {
 			int nextEnemyCell = mapping[m->floor][enemy[i]->y / CHIP_SIZE - m->y - y][enemy[i]->x / CHIP_SIZE - m->x - x];
-			if (nextEnemyCell <= 0)charaMove(enemy[i], x, y);
+			if (nextEnemyCell <= 0)charaMoveEnemy(enemy[i], x, y);
 		}
 		m->x += x;
 		m->y += y;

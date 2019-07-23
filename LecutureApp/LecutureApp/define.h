@@ -29,8 +29,6 @@
 #define MAP_HEIGHT		 (400)
 #define MAP_WIDTH		 (680)
 
-#define SX(a) (a->x/CHIP_SIZE - m->x)
-#define SY(a) (a->y/CHIP_SIZE - m->y)
 
 #define WHITE	GetColor(255,255,255)
 #define RED		GetColor(255,0,0)
@@ -43,8 +41,6 @@
 #define KEY(X,Y) ((X) * 100 + (Y))
 #define KEYDATA(X, Y, N) std::pair<int, NODE>(KEY(X,Y), N)		//座標とノードをペアにする
 
-#define SX(a) (a->x/CHIP_SIZE - m->x)
-#define SY(a) (a->y/CHIP_SIZE - m->y)
 
 struct pokemon;
 struct skill;

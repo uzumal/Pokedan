@@ -1,94 +1,9 @@
-#include "all.h"
 #include <iostream>
 #include <stdio.h>
 #include <tchar.h>
-#include <map>
-#include <stack>
 #include <stdio.h>
-#include "Enemy.cpp"
-#include "Character.cpp"
-#include "Map.cpp"
-#include "Generic.cpp"
-
-
-/*関数プロトタイプ宣言*/
-/********************************Generic.cpp************************************/
-int init();										//初期化
-int getRandom(int,int);							//int max～int minの範囲で乱数を取得
-void wait(int);									//int時間待つ
-void wait(int,char* s);							//int時間待つ、中心に文字表示
-void w_press();									//Kボタン押したら進
-void setDirection(pokemon*, int);						//キャラの向いている方向をセットする
-void skillfull(int experience);					//技威力設定
-void drawCharacter(pokemon*,int d_num);
-bool isPutMoveKey();
-
-
-/*********************************Character.cpp**********************************/
-void attack(pokemon*, pokemon*);			//攻撃する
-void attack_for(pokemon* me);	//プレイヤー用攻撃
-void turnToPokemon(pokemon*, pokemon*);			//ポケモンの方を向く
-void moveJump(pokemon*);						//Jumpする
-void charaMove(pokemon*,pokemon*[ENEMYNUM],maps*,char[256], int, int);		//キャラ移動、自分用　入れ替わり考慮
-pokemon* getFrontEnemy();
-
-
-/*********************************Enemy.cpp**************************************/
-void enemyMove(pokemon*);					//敵の動き
-bool isNearPokemon(pokemon*, pokemon*);			//敵が近くにいたら(攻撃圏内にいたら)true
-bool isNearPokemon2(pokemon*, pokemon*);			//敵が近くにいたら(攻撃圏内にいたら)true
-bool findPokemon(pokemon*, pokemon*);			//敵が発見できる近さにいたら
-bool life(pokemon* enemy, pokemon* me);			//敵死んでいるかどうか
-void randomEnemyPut(pokemon*[ENEMYNUM]);
-void sortEnemy();
-//A*アルゴリズム敵追尾
-int h(NODE*, NODE*);		//ヒューリスティック関数値を返す、マンハッタン距離
-void setNode(NODE* child, int x, int y, NODE* parent, int cost, int f);		//ノードの情報を一気に設定する
-int getCost();				//移動コストを返す、この場合は1を返す
-NODE* Astar(pokemon*);			//A*アルゴリズム適用後、次に進むセルのノードを返す
-void charaMove(pokemon*, int, int);				//キャラ移動、敵用
-bool isNearEnemy(pokemon*,int ,int);
-
-
-/*********************************Message.cpp************************************/
-void initConsole();								//メッセージボックスを初期化する
-void setMessage(char[]);						//表示したいメッセージをセットする
-void outMessage();								//メッセージを表示する
-void initMessage();
-
-
-/**********************************Map.cpp**************************************/
-void mapMove(maps*,pokemon*,pokemon*[ENEMYNUM], int, int);	//マップ移動、引っ掛かり考慮
-void drawMap();
-void drawMiniMap();
-
-/**********************************Menu.cpp*************************************/
-void drawMenu();
-
-/*攻撃する相手を返す*/
-
-/*キーが押されているフレーム数によって表示する画像を変更する*/
-/*
-int getDnum(int key) {
-	if (keyState[key] % 60 >= 1 && keyState[key] % 60 < 30) return 0;
-	else return 1;
-}
-*/
-
-
-
-/*
-void Screen() {
-	while () {
-		sprintf_s(s, "ようこそポケモンの世界へ");
-
-		messageflag = true;
-		setMessage(s);
-		outMessage();
-	}
-}*/
-
-
+#include "allVariableName.h"
+#include "allMethod.h"
 
 /***********************      Mainの処理      *********************************/
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -179,35 +94,35 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		/*Right*/
 		if (!menuflag && keyState[KEY_INPUT_D]==1) {
-			charaMove(c,enemy[m->floor],m,keyState,1,0);
+			charaMove(c,enemy[m->floor],1,0);
 		}
 		/*Left*/
 		else if (!menuflag && keyState[KEY_INPUT_A]==1) { 
-			charaMove(c,enemy[m->floor],m,keyState, -1, 0);
+			charaMove(c,enemy[m->floor],-1, 0);
 		}
 		/*Up*/
 		else if (!menuflag && keyState[KEY_INPUT_W]==1) {
-			charaMove(c,enemy[m->floor],m,keyState, 0, -1);
+			charaMove(c,enemy[m->floor], 0, -1);
 		}
 		/*Down*/
 		else if (!menuflag && keyState[KEY_INPUT_X]==1) {
-			charaMove(c,enemy[m->floor],m,keyState, 0, 1);
+			charaMove(c,enemy[m->floor], 0, 1);
 		}
 		/*RightUp*/
 		else if (!menuflag && keyState[KEY_INPUT_E] == 1) {
-			charaMove(c, enemy[m->floor],m,keyState, 1, -1);
+			charaMove(c, enemy[m->floor], 1, -1);
 		}
 		/*RightDown*/
 		else if (!menuflag && keyState[KEY_INPUT_C] == 1) {
-			charaMove(c, enemy[m->floor],m,keyState, 1, 1);
+			charaMove(c, enemy[m->floor], 1, 1);
 		}
 		/*LeftUp*/
 		else if (!menuflag && keyState[KEY_INPUT_Q] == 1) {
-			charaMove(c, enemy[m->floor],m,keyState, -1, -1);
+			charaMove(c, enemy[m->floor], -1, -1);
 		}
 		/*LeftDown*/
 		else if (!menuflag && keyState[KEY_INPUT_Z] == 1) {
-			charaMove(c, enemy[m->floor],m,keyState, -1, 1);
+			charaMove(c, enemy[m->floor], -1, 1);
 		}
 
 		
@@ -230,7 +145,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//入れ替わり処理を優先させる
 			for (int i = 0; i < ENEMYNUM; i++) {
 				if (GX == SX(enemy[m->floor][i]) + (m->x - tmp_mx) && GY == SY(enemy[m->floor][i]) + (m->y - tmp_my) ) {
-					charaMove(enemy[m->floor][i], m->x - tmp_mx, m->y - tmp_my);
+					charaMoveEnemy(enemy[m->floor][i], m->x - tmp_mx, m->y - tmp_my);
 					enemy[m->floor][i]->x += (m->x - tmp_mx) * CHIP_SIZE; enemy[m->floor][i]->y += (m->y - tmp_my)*CHIP_SIZE;
 					turnToPokemon(enemy[m->floor][i], c);
 					attack(enemy[m->floor][i], c);
@@ -247,7 +162,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			for (int i = 0; i < ENEMYNUM; i++) {
 				if (tmp == enemy[m->floor][i])continue;
 				
-				charaMove(enemy[m->floor][i], m->x - tmp_mx, m->y - tmp_my);
+				charaMoveEnemy(enemy[m->floor][i], m->x - tmp_mx, m->y - tmp_my);
 				//移動後、前、右、左のどちらかにいたとき
 				if (isNearPokemon(enemy[m->floor][i], c) && (GX + (m->x - tmp_mx) != SX(enemy[m->floor][i]) && GY + (m->y - tmp_my) != SY(enemy[m->floor][i]))) {
 					turnToPokemon(enemy[m->floor][i], c);
@@ -255,7 +170,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				}
 				//ななめにいるとき
 				else if (!isNearPokemon(enemy[m->floor][i],c) && isNearPokemon2(enemy[m->floor][i], c)) {
-					charaMove(enemy[m->floor][i], (c->x - enemy[m->floor][i]->x) / CHIP_SIZE, (c->y - enemy[m->floor][i]->y) / CHIP_SIZE);
+					charaMoveEnemy(enemy[m->floor][i], (c->x - enemy[m->floor][i]->x) / CHIP_SIZE, (c->y - enemy[m->floor][i]->y) / CHIP_SIZE);
 				}
 				//8方にいるとき
 				else if (isNearPokemon(enemy[m->floor][i], c)) {
@@ -264,7 +179,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				
 				else {
 					NODE* n = Astar(enemy[m->floor][i]);
-					if (n != NULL)charaMove(enemy[m->floor][i], n->x - SX(enemy[m->floor][i]), n->y - SY(enemy[m->floor][i]));
+					if (n != NULL)charaMoveEnemy(enemy[m->floor][i], n->x - SX(enemy[m->floor][i]), n->y - SY(enemy[m->floor][i]));
 				}
 				
 			}

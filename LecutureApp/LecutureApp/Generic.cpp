@@ -1,10 +1,10 @@
 #pragma once
-#include "all.h"
 #include <random>
-#include "Map.cpp"
-#include "Character.cpp"
+#include "Enemy.h"
+#include "Character.h"
+#include "allVariableName.h"
 
-char keyState[256];			//‰Ÿ‚³‚ê‚Ä‚¢‚éƒL[‚ðŠi”[
+char keyState[256];
 
 /*‰¹ºƒtƒ@ƒCƒ‹ƒƒ‚ƒŠ—p”z—ñ*/
 int slap;
@@ -18,6 +18,31 @@ int stairs_up;
 int load;
 int load2;
 
+
+//‹ZˆÐ—ÍÝ’è
+void skillfull(int level) {
+	c->skill[0].min = 2 + level * 2;
+	c->skill[0].max = 4 + level * 2;
+	c->skill[1].min = 5 + level * 2;
+	c->skill[1].max = 8 + level * 2;
+	c->skill[2].min = 8 + level * 2;
+	c->skill[2].max = 14 + level * 2;
+	c->skill[3].min = 1 + level * 2;
+	c->skill[3].max = 3 + level * 2;
+
+	for (int j = 0; j < FLOORNUM - 1; j++) {
+		for (int i = 0; i < ENEMYNUM; i++) {
+			enemy[j][i]->skill[0].min = 2;
+			enemy[j][i]->skill[0].max = 4;
+			enemy[j][i]->skill[1].min = 3;
+			enemy[j][i]->skill[1].max = 6;
+			enemy[j][i]->skill[2].min = 8;
+			enemy[j][i]->skill[2].max = 14;
+			enemy[j][i]->skill[3].min = 4;
+			enemy[j][i]->skill[3].max = 8;
+		}
+	}
+}
 /*ƒL[‚ª‰Ÿ‚³‚ê‚Ä‚¢‚éƒtƒŒ[ƒ€”‚ð”‚¦‚é*/
 int getCountFrame() {
 	char tmpKey[256];								// Œ»Ý‚ÌƒL[‚Ì“ü—Íó‘Ô‚ðŠi”[‚·‚é
@@ -273,31 +298,6 @@ int init() {
 	load2 = LoadGraph("‰æ‘œ/load2.png");
 
 	return 0;
-}
-
-//‹ZˆÐ—ÍÝ’è
-void skillfull(int level) {
-	c->skill[0].min = 2 + level * 2;
-	c->skill[0].max = 4 + level * 2;
-	c->skill[1].min = 5 + level * 2;
-	c->skill[1].max = 8 + level * 2;
-	c->skill[2].min = 8 + level * 2;
-	c->skill[2].max = 14 + level * 2;
-	c->skill[3].min = 1 + level * 2;
-	c->skill[3].max = 3 + level * 2;
-
-	for (int j = 0; j < FLOORNUM - 1; j++) {
-		for (int i = 0; i < ENEMYNUM; i++) {
-			enemy[j][i]->skill[0].min = 2;
-			enemy[j][i]->skill[0].max = 4;
-			enemy[j][i]->skill[1].min = 3;
-			enemy[j][i]->skill[1].max = 6;
-			enemy[j][i]->skill[2].min = 8;
-			enemy[j][i]->skill[2].max = 14;
-			enemy[j][i]->skill[3].min = 4;
-			enemy[j][i]->skill[3].max = 8;
-		}
-	}
 }
 
 

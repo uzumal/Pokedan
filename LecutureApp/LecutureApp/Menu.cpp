@@ -1,8 +1,6 @@
 #pragma once
 #include "all.h"
-#include "Generic.cpp"
-
-bool menuflag = false;
+#include "allVariableName.h"
 
 void drawMenu() {
 	DrawRotaGraph(550, 160, 1, 0, skillBox, true);

@@ -1,11 +1,15 @@
 #pragma once
-#include "all.h"
-#include "Enemy.cpp"
-#include "Map.cpp"
-#include "Generic.cpp"
+#include "allVariableName.h"
+#include <stdio.h>
+#include "Map.h"
+#include "Enemy.h"
+#include "Generic.h"
+#include "Message.h"
+#include "mapping.h"
 
 #define GX (c->x/CHIP_SIZE - m->x)
 #define GY (c->y/CHIP_SIZE - m->y)
+
 
 /*ジャンプ用変数*/
 int temp = 0;
@@ -15,7 +19,6 @@ int y_prev = 0;
 /*ジャンプ用フラグ*/
 bool onGround = false;		//ジャンプする瞬間
 bool jump = false;			//ジャンプしているかどうか	
-
 
 pokemon poke;
 pokemon* c = &poke;
@@ -27,7 +30,7 @@ void setDirection(pokemon* me, int direction) {
 }
 
 /*自分用の処理*/
-void charaMove(pokemon* me, pokemon* enemy[ENEMYNUM],maps* m,char keyState[256], int x, int y) {
+void charaMove(pokemon* me, pokemon* enemy[ENEMYNUM], int x, int y) {
 
 	//向いている方向をセット
 	if (x == 1)setDirection(me, RIGHT);
