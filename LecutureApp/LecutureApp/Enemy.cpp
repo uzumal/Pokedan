@@ -81,7 +81,7 @@ NODE* Astar(pokemon* enemy) {
 	std::stack<NODE*> st;
 	std::map<int, NODE> openList;
 	std::map<int, NODE>closedList;
-	int loop = 0;
+
 	NODE s = { 0,0,0 };
 	NODE e = { 0,0,0 };
 
@@ -100,8 +100,8 @@ NODE* Astar(pokemon* enemy) {
 
 	//スタート
 	//敵の座標
-	s.x = (enemy->x / CHIP_SIZE - m->x);
-	s.y = (enemy->y / CHIP_SIZE - m->y);
+	s.x = SX(enemy);
+	s.y = SY(enemy);
 
 	//親ノード、コスト、評価値なし
 	setNode(&s, s.x, s.y, NULL, 0, 0);
@@ -111,23 +111,22 @@ NODE* Astar(pokemon* enemy) {
 
 	//ゴール
 	//自分の座標
-	e.x = (c->x / CHIP_SIZE - m->x);
-	e.y = (c->y / CHIP_SIZE - m->y);
+	e.x = GX;
+	e.y = GY;
 
 	while (true) {
-
-
 
 		// openリストがなくなったので終了する
 		if (openList.empty()) { return NULL; }
 
 		int f_min = 9999;
 
-		//展開用
+		//展開用ノード
 		NODE *p = new NODE;
 
 		auto it = openList.begin();		//先頭イテレータ取得
 		std::map<int, NODE>::iterator it_min;
+		//最小ノード取得
 		while (it != openList.end()) {
 			if (f_min > it->second.f) {
 				f_min = it->second.f;
@@ -220,9 +219,6 @@ NODE* Astar(pokemon* enemy) {
 
 
 		}
-
-		if (loop++ > 1000) { break; }
-
 	}
 
 	NODE* node = st.top();
@@ -281,12 +277,13 @@ bool isNearPokemon2(pokemon* me, pokemon* enemy) {
 	return false;
 }
 
-/*同じマップ内にいるかどうか*/
+/*見つけているかどうか、見つけていればA*で追う*/
 bool findPokemon(pokemon* me, pokemon* enemy) {
 	if ((me->x - SCREEN_WIDTH / 2 < enemy->x) && (me->x + SCREEN_WIDTH / 2 > enemy->x) && (me->y + SCREEN_HEIGHT / 2 > enemy->y) && (me->y - SCREEN_HEIGHT / 2 < enemy->y))return true;
 	else return false;
 }
-								/*敵用の処理,入れ替わり処理を無くした*/
+
+/*敵用の処理,入れ替わり処理を無くした*/
 void charaMoveEnemy(pokemon* me, int x, int y) {
 
 	if (x == 1)setDirection(me, RIGHT);
@@ -318,6 +315,8 @@ void charaMoveEnemy(pokemon* me, int x, int y) {
 	}
 }
 
+/*敵(仲間)が移動先にいるか*/
+/*位置被りを無くすために使用*/
 bool isNearEnemy(pokemon* e, int x, int y) {
 
 	for (int i = 0; i < ENEMYNUM; i++) {
@@ -356,8 +355,8 @@ void enemyMove(pokemon* enemy) {
 		}
 		/*8方にいないときはA*アルゴリズム*/
 		else if (!isNearPokemon2(enemy, c)) {
-			NODE* nextEnemy = Astar(enemy);
-			charaMoveEnemy(enemy, nextEnemy->x - sx, nextEnemy->y - sy);
+			NODE* nextEnemyNode = Astar(enemy);
+			charaMoveEnemy(enemy, nextEnemyNode->x - SX(enemy), nextEnemyNode->y - SY(enemy));
 		}
 	}
 	/*まだ対象が見つかっていない場合、うろうろする*/
@@ -399,12 +398,12 @@ void randomEnemyPut(pokemon* e[ENEMYNUM]) {
 	for (int i = 0; i < ENEMYNUM; i++) {
 		while (true) {
 			flag = true;
-			e[i]->x = getRandom(5, 30) * CHIP_SIZE;
-			e[i]->y = getRandom(5, 30) * CHIP_SIZE;
+			e[i]->x = (getRandom(5, 30)+m->x) * CHIP_SIZE;
+			e[i]->y = (getRandom(5, 30)+m->y) * CHIP_SIZE;
 			if (mapping[m->floor][SY(e[i])][SX(e[i])] > 0) {
 				//被りを無くす
 				for (int j = 0; j < i; j++) {
-					if ((SX(e[i]) == SX(e[j]) && SY(e[i]) == SX(e[j])) || (SX(e[i]) == GX && SY(e[i]) == GY))flag = false;
+					if ((SX(e[i]) == SX(e[j]) && SY(e[i]) == SY(e[j])) || (SX(e[i]) == GX && SY(e[i]) == GY))flag = false;
 				}
 				if (flag)break;
 			}
@@ -448,5 +447,81 @@ void sortEnemy() {
 	}
 	for (int i = 0; i < ENEMYNUM; i++) {
 		enemy[m->floor][i] = enemy_tmp[i];
+	}
+}
+
+void enemyMapMove(int tmp_mx,int tmp_my) {
+	pokemon* tmp = NULL;
+
+	//入れ替わり処理を優先させる
+	for (int i = 0; i < ENEMYNUM; i++) {
+		if (GX == SX(enemy[m->floor][i]) + (m->x - tmp_mx) && GY == SY(enemy[m->floor][i]) + (m->y - tmp_my)) {
+			charaMoveEnemy(enemy[m->floor][i], m->x - tmp_mx, m->y - tmp_my);
+			//敵がいても無理やり移動するため、charaMoveEnemyは使わない
+			enemy[m->floor][i]->x += (m->x - tmp_mx) * CHIP_SIZE; 
+			enemy[m->floor][i]->y += (m->y - tmp_my) * CHIP_SIZE;
+			/*
+			if (mapping[m->floor][SY(enemy[m->floor][i])][SX(enemy[m->floor][i])] <= 0) {
+				enemy[m->floor][i]->x -= (m->x - tmp_mx) * CHIP_SIZE;
+				enemy[m->floor][i]->y -= (m->y - tmp_my) * CHIP_SIZE;
+			}*/
+			
+			turnToPokemon(enemy[m->floor][i], c);
+			attack(enemy[m->floor][i], c);
+			tmp = enemy[m->floor][i];
+		}
+	}
+
+	for (int i = 0; i < ENEMYNUM; i++) {
+		if (tmp == enemy[m->floor][i])continue;
+		if (isNearEnemy(enemy[m->floor][i], 0, 0) && mapping[m->floor][SY(enemy[m->floor][i])][SX(enemy[m->floor][i])] > 0) {
+			//敵がいても無理やり移動するため、charaMoveEnemyは使わない
+			enemy[m->floor][i]->x += (m->x - tmp_mx) * CHIP_SIZE; 
+			enemy[m->floor][i]->y += (m->y - tmp_my) * CHIP_SIZE;
+		}
+	}
+
+	for (int i = 0; i < ENEMYNUM; i++) {
+		if (tmp == enemy[m->floor][i])continue;
+
+		charaMoveEnemy(enemy[m->floor][i], m->x - tmp_mx, m->y - tmp_my);
+		//移動後、前、右、左のどちらかにいたとき
+		if (isNearPokemon(enemy[m->floor][i], c) && (GX + (m->x - tmp_mx) != SX(enemy[m->floor][i]) && GY + (m->y - tmp_my) != SY(enemy[m->floor][i]))) {
+			turnToPokemon(enemy[m->floor][i], c);
+			attack(enemy[m->floor][i], c);
+		}
+		//ななめにいるとき
+		else if (!isNearPokemon(enemy[m->floor][i], c) && isNearPokemon2(enemy[m->floor][i], c)) {
+			charaMoveEnemy(enemy[m->floor][i], (c->x - enemy[m->floor][i]->x) / CHIP_SIZE, (c->y - enemy[m->floor][i]->y) / CHIP_SIZE);
+		}
+		//8方にいるとき
+		else if (isNearPokemon(enemy[m->floor][i], c)) {
+			turnToPokemon(enemy[m->floor][i], c);
+		}
+
+		else {
+			NODE* n = Astar(enemy[m->floor][i]);
+			if (n != NULL)charaMoveEnemy(enemy[m->floor][i], n->x - SX(enemy[m->floor][i]), n->y - SY(enemy[m->floor][i]));
+		}
+
+	}
+}
+
+void mainEnemyMove(int tmp_mx,int tmp_my) {
+	if (!menuflag && isPutMoveKey() && tmp_mx == m->x && tmp_my == m->y) {
+		if (keyState[KEY_INPUT_Y] == 0) {
+			sortEnemy();
+
+			for (int i = 0; i < ENEMYNUM; i++) {
+				enemyMove(enemy[m->floor][i]);
+			}
+		}
+	}
+	/*マップ移動時*/
+	else if (!menuflag && isPutMoveKey() && (tmp_mx != m->x || tmp_my != m->y)) {
+
+		sortEnemy();
+
+		enemyMapMove(tmp_mx, tmp_my);
 	}
 }

@@ -3,6 +3,7 @@
 #include "Enemy.h"
 #include "Character.h"
 #include "allVariableName.h"
+#include "Message.h"
 
 char keyState[256];
 
@@ -10,6 +11,9 @@ char keyState[256];
 int slap;
 int bgm;
 int down;
+int main;
+int start;
+int click;
 
 /*画像ファイルメモリ用配列*/
 int skillBox;
@@ -17,7 +21,40 @@ int stairs_down;
 int stairs_up;
 int load;
 int load2;
+int ball[2];
+int tempTime = 0;
+int bl;
+int title[2];
+int over[3];
 
+/*プロトタイプ宣言*/
+void showDisplay(char[]);
+void wait_key(int);
+int getCountFrame();
+void wait(int ms, char* s);
+void wait(int ms);
+int getRandom(int min, int max);
+bool isPutMoveKey();
+int init();
+void skillfull(int level);
+void drawCharacter(pokemon* me, int d_num);
+
+
+void wait_key(int key) {
+	while (getCountFrame() == 0) {
+		if (keyState[key] == 1) {
+			break;
+		}
+	}
+}
+
+void showDisplay(char s[]) {
+	messageflag = true;
+	setMessage(s);
+	outMessage();
+	ScreenFlip();
+	wait_key(KEY_INPUT_K);
+}
 
 //技威力設定
 void skillfull(int level) {
@@ -57,14 +94,6 @@ int getCountFrame() {
 		}
 	}
 	return 0;
-}
-
-void w_press() {
-	while (getCountFrame() == 0) {
-		if (keyState[KEY_INPUT_K] == 1) {
-			break;
-		}
-	}
 }
 
 void wait(int ms, char* s) {
@@ -118,6 +147,8 @@ int init() {
 	SetUseDirectDrawFlag(FALSE);			//処理を軽くするために使用
 	SetWaitVSyncFlag(FALSE);
 
+	c->classify = 1;
+
 	/*後々自分の名前を入力させる*/
 	c->name = "ピカチュウ";
 	for (int i = 0; i < FLOORNUM - 1; i++) {
@@ -127,6 +158,7 @@ int init() {
 	}
 
 	/*画像のロード*/
+	/*
 	c->moveTexture[DOWN][0] = LoadGraph("画像/ピカチュウd_1.png");
 	c->moveTexture[DOWN][1] = LoadGraph("画像/ピカチュウd_2.png");
 	c->moveTexture[UP][0] = LoadGraph("画像/ピカチュウu_1.png");
@@ -135,7 +167,35 @@ int init() {
 	c->moveTexture[LEFT][1] = LoadGraph("画像/ピカチュウl_2.png");
 	c->moveTexture[RIGHT][0] = LoadGraph("画像/ピカチュウr_1.png");
 	c->moveTexture[RIGHT][1] = LoadGraph("画像/ピカチュウr_2.png");
+	*/
 
+	z[0]->moveTexture[DOWN][0] = LoadGraph("画像/ピカチュウd_1.png");
+	z[0]->moveTexture[DOWN][1] = LoadGraph("画像/ピカチュウd_2.png");
+	z[0]->moveTexture[UP][0] = LoadGraph("画像/ピカチュウu_1.png");
+	z[0]->moveTexture[UP][1] = LoadGraph("画像/ピカチュウu_2.png");
+	z[0]->moveTexture[LEFT][0] = LoadGraph("画像/ピカチュウl_1.png");
+	z[0]->moveTexture[LEFT][1] = LoadGraph("画像/ピカチュウl_2.png");
+	z[0]->moveTexture[RIGHT][0] = LoadGraph("画像/ピカチュウr_1.png");
+	z[0]->moveTexture[RIGHT][1] = LoadGraph("画像/ピカチュウr_2.png");
+
+	z[1]->moveTexture[DOWN][0] = LoadGraph("画像/ヒノアラシd_1.png");
+	z[1]->moveTexture[DOWN][1] = LoadGraph("画像/ヒノアラシd_2.png");
+	z[1]->moveTexture[UP][0] = LoadGraph("画像/ヒノアラシu_1.png");
+	z[1]->moveTexture[UP][1] = LoadGraph("画像/ヒノアラシu_2.png");
+	z[1]->moveTexture[LEFT][0] = LoadGraph("画像/ヒノアラシl_1.png");
+	z[1]->moveTexture[LEFT][1] = LoadGraph("画像/ヒノアラシl_2.png");
+	z[1]->moveTexture[RIGHT][0] = LoadGraph("画像/ヒノアラシr_1.png");
+	z[1]->moveTexture[RIGHT][1] = LoadGraph("画像/ヒノアラシr_2.png");
+
+	z[2]->moveTexture[DOWN][0] = LoadGraph("画像/ゼニガメd_1.png");
+	z[2]->moveTexture[DOWN][1] = LoadGraph("画像/ゼニガメd_2.png");
+	z[2]->moveTexture[UP][0] = LoadGraph("画像/ゼニガメu_1.png");
+	z[2]->moveTexture[UP][1] = LoadGraph("画像/ゼニガメu_2.png");
+	z[2]->moveTexture[LEFT][0] = LoadGraph("画像/ゼニガメl_1.png");
+	z[2]->moveTexture[LEFT][1] = LoadGraph("画像/ゼニガメl_2.png");
+	z[2]->moveTexture[RIGHT][0] = LoadGraph("画像/ゼニガメr_1.png");
+	z[2]->moveTexture[RIGHT][1] = LoadGraph("画像/ゼニガメr_2.png");
+	
 	c->skill[0].name = "でんこうせっか";
 	c->skill[1].name = "10まんボルト";
 	c->skill[2].name = "かみなり";
@@ -276,6 +336,18 @@ int init() {
 	stairs_down = LoadGraph("画像/stairs.png");
 	stairs_up = LoadGraph("画像/stairs2.png");
 
+	/*画像のロード*/
+	SetTransColor(255, 255, 255);
+	ball[0] = LoadGraph("画像/モンスターボール.png");
+	//ball[1] = LoadGraph("画像/ピカチュウd_1.png");
+	title[0] = LoadGraph("画像/back.png");
+	title[1] = LoadGraph("画像/title2.png");
+
+	over[0] = LoadGraph("画像/over.png");
+	over[1] = LoadGraph("画像/over1.png");
+	over[2] = LoadGraph("画像/ゲームオーバー.png");
+	bl = LoadGraph("画像/black.png");
+
 	/*白色の透過*/
 	SetTransColor(255, 255, 255);
 	/*メッセージボックス*/
@@ -296,6 +368,9 @@ int init() {
 
 	load = LoadGraph("画像/load.png");
 	load2 = LoadGraph("画像/load2.png");
+
+	main = LoadSoundMem("音楽/main.mp3");
+	start = LoadSoundMem("音楽/start.mp3");
 
 	return 0;
 }

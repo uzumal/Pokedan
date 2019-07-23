@@ -21,6 +21,7 @@ struct pokemon {
 	
 	skill skill[4];
 
+	int classify = 0;
 
 	int direction = DOWN;		//Œü‚¢‚Ä‚¢‚é•ûŒü
 	int x, y;					//ˆÊ’uÀ•W

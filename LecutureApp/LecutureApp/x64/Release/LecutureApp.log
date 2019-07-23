@@ -1,2 +1,7 @@
-﻿C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(1193,5): warning MSB8030: The linker switch "Minimum Required Version" requires "SubSystem" to be set.  Without "SubSystem", the "Minimum Required Version" would not be passed to linker and could prevent to the output binary from running on older Operating Systems.
-LINK : fatal error LNK1104: ファイル 'E:\temp\Visual Studio 2015\Projects\Pokedan\LecutureApp\x64\Release\LecutureApp.exe' を開くことができません。
+﻿  Start.cpp
+  コード生成しています。
+  1 of 349 functions ( 0.3%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    1 functions had inline decision re-evaluated but remain unchanged
+  コード生成が終了しました。
+  LecutureApp.vcxproj -> C:\Users\user\source\repos\Pokedan\LecutureApp\x64\Release\LecutureApp.exe

@@ -35,8 +35,10 @@
 #define GREEN	GetColor(0,255,0)
 #define BLUE	GetColor(0,0,255)
 #define BLACK	GetColor(0,0,0)
+#define BG		GetColor(20,20,20)
 
 #define ENEMYNUM 3
+#define PI 3.141592654
 
 #define KEY(X,Y) ((X) * 100 + (Y))
 #define KEYDATA(X, Y, N) std::pair<int, NODE>(KEY(X,Y), N)		//座標とノードをペアにする

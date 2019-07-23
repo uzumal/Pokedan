@@ -22,14 +22,17 @@ bool jump = false;			//ジャンプしているかどうか
 
 pokemon poke;
 pokemon* c = &poke;
-
+pokemon poke1;
+pokemon poke2;
+pokemon poke3;
+pokemon* z[3] = { &poke1,&poke2,&poke3 };
 
 //向きをセット
 void setDirection(pokemon* me, int direction) {
 	me->direction = direction;
 }
 
-/*自分用の処理*/
+/*動く処理*/
 void charaMove(pokemon* me, pokemon* enemy[ENEMYNUM], int x, int y) {
 
 	//向いている方向をセット
@@ -91,7 +94,7 @@ void charaMove(pokemon* me, pokemon* enemy[ENEMYNUM], int x, int y) {
 }
 
 
-/*attack(自分,敵,攻撃の種類)*/
+/*attack(自分,敵)*/
 void attack(pokemon* me, pokemon* enemy) {
 
 	//turnToPokemon(me, enemy);//敵の方を向く
@@ -128,7 +131,7 @@ void attack(pokemon* me, pokemon* enemy) {
 
 }
 
-//プレイヤー攻撃用,敵が周りにおらず攻撃が必ず外れる場合
+//敵が周りにおらず攻撃が必ず外れる場合
 void attack_for(pokemon* me) {
 
 	if (me->skill[me->attackNum].count > 0) {
@@ -182,7 +185,7 @@ void moveJump(pokemon* me) {
 	onGround = false;
 }
 
-
+/*正面の敵を得る*/
 pokemon* getFrontEnemy() {
 
 	for (int i = 0; i < ENEMYNUM; i++) {
@@ -217,4 +220,64 @@ pokemon* getFrontEnemy() {
 		}
 	}
 	return NULL;
+}
+
+/*メインの動き、移動と攻撃*/
+void mainCharaMove() {
+	/*Attack*/
+	if (!menuflag && keyState[KEY_INPUT_J] == 1) {
+
+		pokemon* tmp = getFrontEnemy();
+		if (tmp != NULL)attack(c, tmp);
+		else attack_for(c);
+
+		for (int i = 0; i < ENEMYNUM; i++) {
+			if (life(enemy[m->floor][i], c) == FALSE) {
+				enemyMove(enemy[m->floor][i]);
+			}
+		}
+	}
+	/*Right*/
+	if (!menuflag && keyState[KEY_INPUT_D] == 1) {
+		charaMove(c, enemy[m->floor], 1, 0);
+	}
+	/*Left*/
+	else if (!menuflag && keyState[KEY_INPUT_A] == 1) {
+		charaMove(c, enemy[m->floor], -1, 0);
+	}
+	/*Up*/
+	else if (!menuflag && keyState[KEY_INPUT_W] == 1) {
+		charaMove(c, enemy[m->floor], 0, -1);
+	}
+	/*Down*/
+	else if (!menuflag && keyState[KEY_INPUT_X] == 1) {
+		charaMove(c, enemy[m->floor], 0, 1);
+	}
+	/*RightUp*/
+	else if (!menuflag && keyState[KEY_INPUT_E] == 1) {
+		charaMove(c, enemy[m->floor], 1, -1);
+	}
+	/*RightDown*/
+	else if (!menuflag && keyState[KEY_INPUT_C] == 1) {
+		charaMove(c, enemy[m->floor], 1, 1);
+	}
+	/*LeftUp*/
+	else if (!menuflag && keyState[KEY_INPUT_Q] == 1) {
+		charaMove(c, enemy[m->floor], -1, -1);
+	}
+	/*LeftDown*/
+	else if (!menuflag && keyState[KEY_INPUT_Z] == 1) {
+		charaMove(c, enemy[m->floor], -1, 1);
+	}
+
+	/*階段移動処理*/
+	if (mapping[m->floor][GY][GX] == 100) {
+		stairsMove(1);
+		initMessage();
+	}
+
+	if (mapping[m->floor][GY][GX] == 101) {
+		stairsMove(-1);
+		initMessage();
+	}
 }

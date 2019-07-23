@@ -1,6 +1,7 @@
 #pragma once
 #include "all.h"
 
+extern void mainCharaMove();
 extern void setDirection(pokemon* me, int direction);
 extern void charaMove(pokemon* me, pokemon* enemy[ENEMYNUM],  int x, int y);
 extern void attack(pokemon* me, pokemon* enemy);

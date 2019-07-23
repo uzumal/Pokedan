@@ -12,3 +12,5 @@ extern bool isNearEnemy(pokemon* e, int x, int y);
 extern void enemyMove(pokemon* enemy);
 extern void randomEnemyPut(pokemon* e[ENEMYNUM]);
 extern void sortEnemy();
+extern void enemyMapMove(int tmp_mx, int tmp_my);
+extern void mainEnemyMove(int, int);

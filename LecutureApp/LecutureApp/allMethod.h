@@ -7,3 +7,5 @@
 #include "Map.h"
 #include "Message.h"
 #include "Menu.h"
+#include "Start.h"
+#include "End.h"

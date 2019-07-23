@@ -13,3 +13,19 @@ void drawMenu() {
 	else if (keyState[KEY_INPUT_3]) { c->attackNum = 2; menuflag = false; }
 	else if (keyState[KEY_INPUT_4]) { c->attackNum = 3; menuflag = false; }
 }
+
+void showMenu() {
+	/*‚í‚´•\‚ğÁ‹*/
+	if (menuflag && keyState[KEY_INPUT_I] == 1) {
+		menuflag = false;
+	}
+
+	/*‚í‚´•\‚ğ•\¦*/
+	else if (!menuflag && keyState[KEY_INPUT_I] == 1) {
+		menuflag = true;
+	}
+
+	if (menuflag) {
+		drawMenu();
+	}
+}

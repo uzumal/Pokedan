@@ -1,6 +1,8 @@
 #pragma once
 #include "all.h"
 
+extern void showDisplay(char[]);
+extern void wait_key(int);
 extern int getCountFrame();
 extern void wait(int ms, char* s);
 extern void wait(int ms);
