@@ -9,3 +9,5 @@
 #include "Menu.h"
 #include "Start.h"
 #include "End.h"
+#include "Init.h"
+#include "FileIO.h"

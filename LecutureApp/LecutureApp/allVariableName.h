@@ -20,6 +20,7 @@ extern int stairs_down;			//下り階段
 extern int stairs_up;			//上り階段
 extern int load;				//1階の道
 extern int load2;				//2階の道
+extern int load3;
 extern int messageBox;			//下のメッセージボックス
 extern int ball[2];
 extern int tempTime;
@@ -34,12 +35,15 @@ extern char message3[256];		//下段
 extern char s[256];				//sprintf_s用の配列
 
 /*ポケモン構造体*/
-extern pokemon* b;								//ボスを格納する
-extern pokemon* enemy[FLOORNUM - 1][ENEMYNUM];	//敵を格納する
+extern pokemon* lastboss;								//ボスを格納する
+extern pokemon* enemy[FLOORNUM][ENEMYNUM];	//敵を格納する
 
 extern pokemon* c;								//ポケモン主人公ポインタ
 extern pokemon* z[3];
 extern maps* m;									//マップ構造体ポインタ
+
+/*ミニマップ表示フラグ*/
+extern int miniMapFlag[FLOORNUM][MAP_YNUM][MAP_XNUM];
 
 extern char keyState[256];						//押されているキーを格納する配列
 
@@ -48,4 +52,5 @@ extern bool messageflag;						//メッセージを表示するか
 
 extern bool menuflag;
 
-extern bool endflag;
+extern bool endflag; 
+extern bool story;

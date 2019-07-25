@@ -1,6 +1,6 @@
 #pragma once
 #include "allVariableName.h"
-
+#include "Generic.h"
 
 char message1[256];
 char message2[256];
@@ -10,6 +10,8 @@ char s[256];				//sprintf_s用の配列
 int messageBox;
 bool menuflag = false;
 bool messageflag = false;
+
+void showDisplay(char[]);
 
 /*下のコンソール初期化*/
 void initConsole() {
@@ -69,4 +71,29 @@ void initMessage() {
 		message2[i] = '\0';
 		message3[i] = '\0';
 	}
+}
+
+
+void showDisplay(char ss[]) {
+	int sound = LoadSoundMem("音楽/string.mp3");
+	char tmp[256];
+	//一応初期化
+	for (int i = 0; i < 256; i++) { tmp[i] = '\0'; }
+
+	messageflag = true;
+
+	for (int i = 0; ss[i] != '\0'; i++) {
+		ScreenFlip();
+		wait(10);
+		PlaySoundMem(sound, DX_PLAYTYPE_BACK);
+		tmp[i] = ss[i];
+		initMessage();
+		setMessage(tmp);
+		outMessage();
+	}
+	initMessage();
+	setMessage(ss);
+	outMessage();
+	ScreenFlip();
+	wait_key(KEY_INPUT_A);
 }

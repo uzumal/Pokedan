@@ -127,7 +127,9 @@
   <ItemGroup>
     <ClCompile Include="Character.cpp" />
     <ClCompile Include="End.cpp" />
+    <ClCompile Include="FileIO.cpp" />
     <ClCompile Include="Generic.cpp" />
+    <ClCompile Include="Init.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="Map.cpp" />
@@ -144,7 +146,9 @@
     <ClInclude Include="define.h" />
     <ClInclude Include="End.h" />
     <ClInclude Include="Enemy.h" />
+    <ClInclude Include="FileIO.h" />
     <ClInclude Include="Generic.h" />
+    <ClInclude Include="Init.h" />
     <ClInclude Include="Map.h" />
     <ClInclude Include="mapping.h" />
     <ClInclude Include="maps.h" />

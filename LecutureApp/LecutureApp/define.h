@@ -34,6 +34,7 @@
 #define RED		GetColor(255,0,0)
 #define GREEN	GetColor(0,255,0)
 #define BLUE	GetColor(0,0,255)
+#define YELLOW	GetColor(255,242,0)
 #define BLACK	GetColor(0,0,0)
 #define BG		GetColor(20,20,20)
 

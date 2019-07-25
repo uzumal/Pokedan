@@ -27,6 +27,15 @@ pokemon poke2;
 pokemon poke3;
 pokemon* z[3] = { &poke1,&poke2,&poke3 };
 
+void mainCharaMove();
+void setDirection(pokemon* me, int direction);
+void charaMove(pokemon* me, pokemon* enemy[ENEMYNUM], int x, int y);
+void attack(pokemon* me, pokemon* enemy);
+void attack_for(pokemon* me);
+void moveJump(pokemon* me);
+pokemon* getFrontEnemy();
+
+
 //Œü‚«‚ðƒZƒbƒg
 void setDirection(pokemon* me, int direction) {
 	me->direction = direction;

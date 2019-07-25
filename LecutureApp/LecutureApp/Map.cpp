@@ -3,21 +3,55 @@
 #include "Generic.h"
 #include "Enemy.h"
 #include "Character.h"
+#include "Init.h"
 
 /*マップ構造体*/
 maps mp;
 maps* m = &mp;
+pokemon* lastboss;
 
-/*ミニマップ表示フラグ*/
-int miniMapFlag[FLOORNUM][MAP_YNUM][MAP_XNUM];
-
+bool story;
 
 void stairsMove(int stairs) {
 	m->floor += stairs;
-	sprintf_s(s, "はじまりのダンジョン\n　　　　B%dF", m->floor + 1);
-	wait(2000, s);
 	if (m->floor != 2) {
+		sprintf_s(s, "はじまりのダンジョン\n　　　　B%dF", m->floor + 1);
+		wait(2000, s);
+		
+		while (c->x != SCREEN_WIDTH / 2 || c->y != MAP_HEIGHT/2) {
+
+			if (c->x < SCREEN_WIDTH / 2) { c->x += CHIP_SIZE; m->x++; }
+			if (c->x > SCREEN_WIDTH / 2) { c->x -= CHIP_SIZE; m->x--; }
+			if (c->y < MAP_HEIGHT / 2) { c->y += CHIP_SIZE; m->y++; }
+			if (c->y > MAP_HEIGHT / 2) { c->y -= CHIP_SIZE; m->y--; }
+
+		}
 		randomEnemyPut(enemy[m->floor]);
+		
+	}
+	else {
+		StopSoundMem(bgm);
+		sprintf_s(s, "はじまりのダンジョン\n         最終階");
+		wait(2000, s);
+
+		/*
+		while (c->x != SCREEN_WIDTH / 2 || c->y != MAP_HEIGHT / 2) {
+
+			if (c->x < SCREEN_WIDTH / 2) { c->x += CHIP_SIZE; m->x++; }
+			if (c->x > SCREEN_WIDTH / 2) { c->x -= CHIP_SIZE; m->x--; }
+			if (c->y < MAP_HEIGHT / 2) { c->y += CHIP_SIZE; m->y++; }
+			if (c->y > MAP_HEIGHT / 2) { c->y -= CHIP_SIZE; m->y--; }
+
+		}*/
+
+		for (int i = 0; i < ENEMYNUM; i++) {
+			if (enemy[m->floor][i]->isLive) { 
+				enemy[m->floor][i]->x = c->x;
+				enemy[m->floor][i]->y = c->y;
+			}
+		}
+		
+		story = true;
 	}
 }
 
@@ -45,8 +79,7 @@ void drawMap() {
 			if (mapping[m->floor][y][x] == 0) { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, WHITE, " "); }
 			else if (mapping[m->floor][y][x] == 1) { DrawRotaGraph((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, 1, 0, load, true); }
 			else if (mapping[m->floor][y][x] == 2) { DrawRotaGraph((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, 1, 0, load2, true); }
-			else if (mapping[m->floor][y][x] == 3) { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, GetColor(0, 0, 255), "B"); }
-			else if (mapping[m->floor][y][x] == 5) { DrawFormatString((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, GetColor(0, 0, 255), "*"); }
+			else if (mapping[m->floor][y][x] == 3) { DrawRotaGraph((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, 1, 0, load, true); }
 			else if (mapping[m->floor][y][x] == 100) { DrawRotaGraph((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, 1, 0, stairs_down, true); }
 			else if (mapping[m->floor][y][x] == 101) { DrawRotaGraph((m->x + x) * CHIP_SIZE + 20, (m->y + y) * CHIP_SIZE + 20, 1, 0, stairs_up, true); }
 		}

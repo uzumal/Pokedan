@@ -3,7 +3,6 @@
 
 extern void turnToPokemon(pokemon* me, pokemon* enemy);
 extern NODE* Astar(pokemon* enemy);
-extern bool life(pokemon* enemy, pokemon* me);
 extern bool isNearPokemon(pokemon* me, pokemon* enemy);
 extern bool isNearPokemon2(pokemon* me, pokemon* enemy);
 extern bool findPokemon(pokemon* me, pokemon* enemy);
