@@ -20,7 +20,7 @@ extern int stairs_down;			//下り階段
 extern int stairs_up;			//上り階段
 extern int load;				//1階の道
 extern int load2;				//2階の道
-extern int load3;
+extern int load3;				//3階の道
 extern int messageBox;			//下のメッセージボックス
 extern int ball[2];
 extern int tempTime;
@@ -35,8 +35,8 @@ extern char message3[256];		//下段
 extern char s[256];				//sprintf_s用の配列
 
 /*ポケモン構造体*/
-extern pokemon* lastboss;								//ボスを格納する
-extern pokemon* enemy[FLOORNUM][ENEMYNUM];	//敵を格納する
+extern pokemon* lastboss;						//ボスを格納する
+extern pokemon* enemy[FLOORNUM-1][ENEMYNUM];	//敵を格納する
 
 extern pokemon* c;								//ポケモン主人公ポインタ
 extern pokemon* z[3];

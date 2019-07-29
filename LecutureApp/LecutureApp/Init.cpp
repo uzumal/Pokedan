@@ -45,9 +45,10 @@ int init() {
 
 	m->floor = 0;
 
-	z[0]->name = "ピカチュウ";
-	z[1]->name = "ヒノアラシ";
-	z[2]->name = "ゼニガメ";
+	nameSet(z[0], "ピカチュウ");
+	nameSet(z[1], "ヒノアラシ");
+	nameSet(z[2],"ゼニガメ");
+	
 
 	for (int i = 0; i < 3; i++) {
 		charaSet(z[i]);
@@ -61,7 +62,6 @@ int init() {
 	/*画像のロード*/
 	SetTransColor(255, 255, 255);
 	ball[0] = LoadGraph("画像/モンスターボール.png");
-	//ball[1] = LoadGraph("画像/ピカチュウd_1.png");
 	title[0] = LoadGraph("画像/back.png");
 	title[1] = LoadGraph("画像/title2.png");
 
@@ -95,8 +95,6 @@ void charaInit() {
 	
 	charaSet(c);
 
-	enemy[2][1]->isLive = false;
-	enemy[2][2]->isLive = false;
 
 	enemy[0][0]->name = "フシギダネ";
 	enemy[0][1]->name = "ディグダ";
@@ -104,7 +102,8 @@ void charaInit() {
 	enemy[1][0]->name = "ダークライ";
 	enemy[1][1]->name = "ボスゴドラ";
 	enemy[1][2]->name = "スイクン";
-	enemy[2][0]->name = "ミュウツー";
+	
+	lastboss->name = "ミュウツー";
 
 	for (int i = 0; i < FLOORNUM - 1; i++) {
 		for (int j = 0; j < ENEMYNUM; j++) {
@@ -112,7 +111,7 @@ void charaInit() {
 		}
 	}
 
-	charaSet(enemy[2][0]);
+	charaSet(lastboss);
 
 	/*マップ初期化*/
 	m->floor = 0;

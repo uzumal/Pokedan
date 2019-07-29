@@ -11,3 +11,4 @@
 #include "End.h"
 #include "Init.h"
 #include "FileIO.h"
+#include "View.h"

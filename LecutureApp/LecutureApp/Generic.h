@@ -9,6 +9,5 @@ extern void wait(int ms);
 extern int getRandom(int min, int max);
 extern bool isPutMoveKey();
 extern void levelUp(int level);
-extern void drawCharacter(pokemon* me, int d_num);
 extern bool life(pokemon*, pokemon*);
 extern void charaInit();

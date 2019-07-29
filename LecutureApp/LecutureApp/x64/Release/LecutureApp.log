@@ -1,8 +1,7 @@
-﻿  Map.cpp
-  Message.cpp
+﻿  Character.cpp
   コード生成しています。
-  2 of 358 functions ( 0.6%) were compiled, the rest were copied from previous compilation.
+  9 of 362 functions ( 2.5%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    3 functions had inline decision re-evaluated but remain unchanged
+    7 functions had inline decision re-evaluated but remain unchanged
   コード生成が終了しました。
   LecutureApp.vcxproj -> C:\Users\user\source\repos\Pokedan\LecutureApp\x64\Release\LecutureApp.exe

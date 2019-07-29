@@ -29,7 +29,7 @@ pokemon* z[3] = { &poke1,&poke2,&poke3 };
 
 void mainCharaMove();
 void setDirection(pokemon* me, int direction);
-void charaMove(pokemon* me, pokemon* enemy[ENEMYNUM], int x, int y);
+void charaMove(pokemon* me, int x, int y);
 void attack(pokemon* me, pokemon* enemy);
 void attack_for(pokemon* me);
 void moveJump(pokemon* me);
@@ -42,14 +42,8 @@ void setDirection(pokemon* me, int direction) {
 }
 
 /*動く処理*/
-void charaMove(pokemon* me, pokemon* enemy[ENEMYNUM], int x, int y) {
+void charaMove(pokemon* me, int x, int y) {
 
-	//向いている方向をセット
-	if (x == 1)setDirection(me, RIGHT);
-	else if (x == -1)setDirection(me, LEFT);
-
-	if (y == 1)setDirection(me, DOWN);
-	else if (y == -1)setDirection(me, UP);
 
 	//マップ移動用
 	int mx = 0;
@@ -71,6 +65,13 @@ void charaMove(pokemon* me, pokemon* enemy[ENEMYNUM], int x, int y) {
 		}
 	}
 
+	//向いている方向をセット
+	if (x == 1)setDirection(me, RIGHT);
+	else if (x == -1)setDirection(me, LEFT);
+
+	if (y == 1)setDirection(me, DOWN);
+	else if (y == -1)setDirection(me, UP);
+
 	//マップの端であればマップ移動
 	if (me->x == CHIP_SIZE * 2 && x == -1 || me->x == MAP_WIDTH && x == 1) {
 		mx = x * -1;
@@ -86,19 +87,27 @@ void charaMove(pokemon* me, pokemon* enemy[ENEMYNUM], int x, int y) {
 
 	if (nextCell > 0 && !keyState[KEY_INPUT_Y]) {
 		/*移動先に敵がいたら入れ替わる*/
-		for (int i = 0; i < ENEMYNUM; i++) {
-			if (me->x / CHIP_SIZE + x == enemy[i]->x / CHIP_SIZE && me->y / CHIP_SIZE + y == enemy[i]->y / CHIP_SIZE) charaMoveEnemy(enemy[i], x*(-1), y*(-1));
+		if (m->floor != 2) {
+			for (int i = 0; i < ENEMYNUM; i++) {
+				if (me->x / CHIP_SIZE + x == enemy[m->floor][i]->x / CHIP_SIZE && me->y / CHIP_SIZE + y == enemy[m->floor][i]->y / CHIP_SIZE) charaMoveEnemy(enemy[m->floor][i], x * (-1), y * (-1));
+			}
+			me->x += x * CHIP_SIZE;
+			me->y += y * CHIP_SIZE;
+			for (int i = 0; i < ENEMYNUM; i++) {
+				if (me->x / CHIP_SIZE == enemy[m->floor][i]->x / CHIP_SIZE && me->y / CHIP_SIZE == enemy[m->floor][i]->y / CHIP_SIZE) charaMoveEnemy(enemy[m->floor][i], x * (-1), y * (-1));
+			}
 		}
-		me->x += x * CHIP_SIZE;
-		me->y += y * CHIP_SIZE;
-		for (int i = 0; i < ENEMYNUM; i++) {
-			if (me->x / CHIP_SIZE == enemy[i]->x / CHIP_SIZE && me->y / CHIP_SIZE == enemy[i]->y / CHIP_SIZE) charaMoveEnemy(enemy[i], x * (-1), y * (-1));
+		else {
+			if (me->x / CHIP_SIZE + x == lastboss->x / CHIP_SIZE && me->y / CHIP_SIZE + y == lastboss->y / CHIP_SIZE) charaMoveEnemy(lastboss, x * (-1), y * (-1));
+			me->x += x * CHIP_SIZE;
+			me->y += y * CHIP_SIZE;
+			if (me->x / CHIP_SIZE == lastboss->x / CHIP_SIZE && me->y / CHIP_SIZE == lastboss->y / CHIP_SIZE) charaMoveEnemy(lastboss, x * (-1), y * (-1));
 		}
 	}
 
 	//マップ移動があれば
 	if (!(mx == 0 && my == 0)) {
-		mapMove(m, me, enemy, mx, my);
+		mapMove(m, me, mx, my);
 	}
 }
 
@@ -197,33 +206,65 @@ void moveJump(pokemon* me) {
 /*正面の敵を得る*/
 pokemon* getFrontEnemy() {
 
-	for (int i = 0; i < ENEMYNUM; i++) {
+	if (m->floor != 2) {
+		for (int i = 0; i < ENEMYNUM; i++) {
 
+			if (c->direction == UP) {
+				if (c->x == enemy[m->floor][i]->x && c->y - CHIP_SIZE == enemy[m->floor][i]->y) {
+					if (enemy[m->floor][i]->isLive) {
+						return enemy[m->floor][i];
+					}
+				}
+			}
+			else if (c->direction == RIGHT) {
+				if (c->y == enemy[m->floor][i]->y && c->x + CHIP_SIZE == enemy[m->floor][i]->x) {
+					if (enemy[m->floor][i]->isLive) {
+						return enemy[m->floor][i];
+					}
+				}
+			}
+			else if (c->direction == DOWN) {
+				if (c->x == enemy[m->floor][i]->x && c->y + CHIP_SIZE == enemy[m->floor][i]->y) {
+					if (enemy[m->floor][i]->isLive) {
+						return enemy[m->floor][i];
+					}
+				}
+			}
+			else if (c->direction == LEFT) {
+				if (c->y == enemy[m->floor][i]->y && c->x - CHIP_SIZE == enemy[m->floor][i]->x) {
+					if (enemy[m->floor][i]->isLive) {
+						return enemy[m->floor][i];
+					}
+				}
+			}
+		}
+	}
+	else {
 		if (c->direction == UP) {
-			if (c->x == enemy[m->floor][i]->x && c->y - CHIP_SIZE == enemy[m->floor][i]->y) {
-				if (enemy[m->floor][i]->isLive) {
-					return enemy[m->floor][i];
+			if (c->x == lastboss->x && c->y - CHIP_SIZE == lastboss->y) {
+				if (lastboss->isLive) {
+					return lastboss;
 				}
 			}
 		}
 		else if (c->direction == RIGHT) {
-			if (c->y == enemy[m->floor][i]->y && c->x + CHIP_SIZE == enemy[m->floor][i]->x) {
-				if (enemy[m->floor][i]->isLive) {
-					return enemy[m->floor][i];
+			if (c->y == lastboss->y && c->x + CHIP_SIZE == lastboss->x) {
+				if (lastboss->isLive) {
+					return lastboss;
 				}
 			}
 		}
 		else if (c->direction == DOWN) {
-			if (c->x == enemy[m->floor][i]->x && c->y + CHIP_SIZE == enemy[m->floor][i]->y) {
-				if (enemy[m->floor][i]->isLive) {
-					return enemy[m->floor][i];
+			if (c->x == lastboss->x && c->y + CHIP_SIZE == lastboss->y) {
+				if (lastboss->isLive) {
+					return lastboss;
 				}
 			}
 		}
 		else if (c->direction == LEFT) {
-			if (c->y == enemy[m->floor][i]->y && c->x - CHIP_SIZE == enemy[m->floor][i]->x) {
-				if (enemy[m->floor][i]->isLive) {
-					return enemy[m->floor][i];
+			if (c->y == lastboss->y && c->x - CHIP_SIZE == lastboss->x) {
+				if (lastboss->isLive) {
+					return lastboss;
 				}
 			}
 		}
@@ -239,44 +280,50 @@ void mainCharaMove() {
 		pokemon* tmp = getFrontEnemy();
 		if (tmp != NULL)attack(c, tmp);
 		else attack_for(c);
-
-		for (int i = 0; i < ENEMYNUM; i++) {
-			if (life(enemy[m->floor][i], c) == FALSE) {
-				enemyMove(enemy[m->floor][i]);
+		if (m->floor != 2) {
+			for (int i = 0; i < ENEMYNUM; i++) {
+				if (life(enemy[m->floor][i], c) == FALSE) {
+					enemyMove(enemy[m->floor][i]);
+				}
+			}
+		}
+		else {
+			if (life(lastboss, c) == FALSE) {
+				enemyMove(lastboss);
 			}
 		}
 	}
 	/*Right*/
 	if (!menuflag && keyState[KEY_INPUT_D] == 1) {
-		charaMove(c, enemy[m->floor], 1, 0);
+		charaMove(c, 1, 0);
 	}
 	/*Left*/
 	else if (!menuflag && keyState[KEY_INPUT_A] == 1) {
-		charaMove(c, enemy[m->floor], -1, 0);
+		charaMove(c, -1, 0);
 	}
 	/*Up*/
 	else if (!menuflag && keyState[KEY_INPUT_W] == 1) {
-		charaMove(c, enemy[m->floor], 0, -1);
+		charaMove(c, 0, -1);
 	}
 	/*Down*/
 	else if (!menuflag && keyState[KEY_INPUT_X] == 1) {
-		charaMove(c, enemy[m->floor], 0, 1);
+		charaMove(c, 0, 1);
 	}
 	/*RightUp*/
 	else if (!menuflag && keyState[KEY_INPUT_E] == 1) {
-		charaMove(c, enemy[m->floor], 1, -1);
+		charaMove(c, 1, -1);
 	}
 	/*RightDown*/
 	else if (!menuflag && keyState[KEY_INPUT_C] == 1) {
-		charaMove(c, enemy[m->floor], 1, 1);
+		charaMove(c, 1, 1);
 	}
 	/*LeftUp*/
 	else if (!menuflag && keyState[KEY_INPUT_Q] == 1) {
-		charaMove(c, enemy[m->floor], -1, -1);
+		charaMove(c, -1, -1);
 	}
 	/*LeftDown*/
 	else if (!menuflag && keyState[KEY_INPUT_Z] == 1) {
-		charaMove(c, enemy[m->floor], -1, 1);
+		charaMove(c, -1, 1);
 	}
 
 	/*階段移動処理*/

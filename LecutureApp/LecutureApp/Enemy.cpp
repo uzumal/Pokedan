@@ -14,14 +14,13 @@ pokemon e1_2;
 pokemon e2_2;
 pokemon e3_2;
 pokemon boss;
-pokemon e_null1;
-pokemon e_null2;
 
-pokemon* enemy[FLOORNUM][ENEMYNUM] = {
+pokemon* enemy[FLOORNUM-1][ENEMYNUM] = {
 	{ &e1_1 , &e2_1 , &e3_1 },
-	{ &e1_2 , &e2_2 , &e3_2 },
-	{ &boss , &e_null1 , &e_null2},
+	{ &e1_2 , &e2_2 , &e3_2 }
 };
+
+pokemon* lastboss = &boss;
 
 /*プロトタイプ宣言*/
 void turnToPokemon(pokemon* me, pokemon* enemy);
@@ -289,6 +288,7 @@ void charaMoveEnemy(pokemon* me, int x, int y) {
 /*位置被りを無くすために使用*/
 bool isNearEnemy(pokemon* e, int x, int y) {
 
+	if (m->floor == 2)return false;
 	for (int i = 0; i < ENEMYNUM; i++) {
 		if (enemy[m->floor][i] != e) {
 			//移動先に既に敵がいる場合
@@ -419,64 +419,48 @@ void sortEnemy() {
 	}
 }
 
-void enemyMapMove(int tmp_mx,int tmp_my) {
-	pokemon* tmp = NULL;
+void enemyMapMove(pokemon* e,int tmp_mx,int tmp_my) {
 
 	//入れ替わり処理を優先させる
-	for (int i = 0; i < ENEMYNUM; i++) {
-		if (enemy[m->floor][i]->hp != 0) {
-			if (GX == SX(enemy[m->floor][i]) + (m->x - tmp_mx) && GY == SY(enemy[m->floor][i]) + (m->y - tmp_my)) {
-				charaMoveEnemy(enemy[m->floor][i], m->x - tmp_mx, m->y - tmp_my);
-				//敵がいても無理やり移動するため、charaMoveEnemyは使わない
-				enemy[m->floor][i]->x += (m->x - tmp_mx) * CHIP_SIZE;
-				enemy[m->floor][i]->y += (m->y - tmp_my) * CHIP_SIZE;
-				/*
-				if (mapping[m->floor][SY(enemy[m->floor][i])][SX(enemy[m->floor][i])] <= 0) {
-					enemy[m->floor][i]->x -= (m->x - tmp_mx) * CHIP_SIZE;
-					enemy[m->floor][i]->y -= (m->y - tmp_my) * CHIP_SIZE;
-				}*/
-
-				turnToPokemon(enemy[m->floor][i], c);
-				attack(enemy[m->floor][i], c);
-				tmp = enemy[m->floor][i];
-			}
+	if (GX == SX(e) + (m->x - tmp_mx) && GY == SY(e) + (m->y - tmp_my)) {
+		charaMoveEnemy(e, m->x - tmp_mx, m->y - tmp_my);
+		//敵がいても無理やり移動するため、charaMoveEnemyは使わない
+		e->x += (m->x - tmp_mx) * CHIP_SIZE;
+		e->y += (m->y - tmp_my) * CHIP_SIZE;
+		if (e->isLive) {
+			turnToPokemon(e, c);
+			attack(e, c);
 		}
 	}
 
-	for (int i = 0; i < ENEMYNUM; i++) {
-		if (tmp == enemy[m->floor][i])continue;
-		if (enemy[m->floor][i]->hp != 0) {
-			if (isNearEnemy(enemy[m->floor][i], 0, 0) && mapping[m->floor][SY(enemy[m->floor][i])][SX(enemy[m->floor][i])] > 0) {
-				//敵がいても無理やり移動するため、charaMoveEnemyは使わない
-				enemy[m->floor][i]->x += (m->x - tmp_mx) * CHIP_SIZE;
-				enemy[m->floor][i]->y += (m->y - tmp_my) * CHIP_SIZE;
-			}
+	if (e->isLive) {
+		if (isNearEnemy(e, 0, 0) && mapping[m->floor][SY(e)][SX(e)] > 0) {
+			//敵がいても無理やり移動するため、charaMoveEnemyは使わない
+			e->x += (m->x - tmp_mx) * CHIP_SIZE;
+			e->y += (m->y - tmp_my) * CHIP_SIZE;
 		}
 	}
 
-	for (int i = 0; i < ENEMYNUM; i++) {
-		if (tmp == enemy[m->floor][i])continue;
-		if (enemy[m->floor][i]->hp != 0) {
-			charaMoveEnemy(enemy[m->floor][i], m->x - tmp_mx, m->y - tmp_my);
-			//移動後、前、右、左のどちらかにいたとき
-			if (isNearPokemon(enemy[m->floor][i], c) && (GX + (m->x - tmp_mx) != SX(enemy[m->floor][i]) && GY + (m->y - tmp_my) != SY(enemy[m->floor][i]))) {
-				turnToPokemon(enemy[m->floor][i], c);
-				attack(enemy[m->floor][i], c);
-			}
-			//ななめにいるとき
-			else if (!isNearPokemon(enemy[m->floor][i], c) && isNearPokemon2(enemy[m->floor][i], c)) {
-				charaMoveEnemy(enemy[m->floor][i], (c->x - enemy[m->floor][i]->x) / CHIP_SIZE, (c->y - enemy[m->floor][i]->y) / CHIP_SIZE);
-			}
-			//8方にいるとき
-			else if (isNearPokemon(enemy[m->floor][i], c)) {
-				turnToPokemon(enemy[m->floor][i], c);
-			}
-
-			else {
-				NODE* n = Astar(enemy[m->floor][i]);
-				if (n != NULL)charaMoveEnemy(enemy[m->floor][i], n->x - SX(enemy[m->floor][i]), n->y - SY(enemy[m->floor][i]));
-			}
+	if (e->isLive) {
+		charaMoveEnemy(e, m->x - tmp_mx, m->y - tmp_my);
+		//移動後、前、右、左のどちらかにいたとき
+		if (isNearPokemon(e, c) && (GX + (m->x - tmp_mx) != SX(e) && GY + (m->y - tmp_my) != SY(e))) {
+			turnToPokemon(e, c);
+			attack(e, c);
 		}
+		//ななめにいるとき
+		else if (!isNearPokemon(e, c) && isNearPokemon2(e, c)) {
+			charaMoveEnemy(e, (c->x - e->x) / CHIP_SIZE, (c->y - e->y) / CHIP_SIZE);
+		}
+		//8方にいるとき
+		else if (isNearPokemon(e, c)) {
+			turnToPokemon(e, c);
+		}
+		else {
+			NODE* n = Astar(e);
+			if (n != NULL)charaMoveEnemy(e, n->x - SX(e), n->y - SY(e));
+		}
+		
 	}
 }
 
@@ -494,6 +478,20 @@ void mainEnemyMove(int tmp_mx,int tmp_my) {
 	else if (!menuflag && isPutMoveKey() && (tmp_mx != m->x || tmp_my != m->y)) {
 
 		sortEnemy();
-		enemyMapMove(tmp_mx, tmp_my);
+		for (int i = 0; i < ENEMYNUM; i++) {
+			enemyMapMove(enemy[m->floor][i],tmp_mx, tmp_my);
+		}
+	}
+}
+
+void mainBossMove(int tmp_mx, int tmp_my) {
+	if (!menuflag && isPutMoveKey() && tmp_mx == m->x && tmp_my == m->y) {
+		if (keyState[KEY_INPUT_Y] == 0) {
+			enemyMove(lastboss);
+		}
+	}
+	/*マップ移動時*/
+	else if (!menuflag && isPutMoveKey() && (tmp_mx != m->x || tmp_my != m->y)) {
+		enemyMapMove(lastboss,tmp_mx, tmp_my);
 	}
 }

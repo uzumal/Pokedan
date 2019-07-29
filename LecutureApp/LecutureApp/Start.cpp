@@ -15,6 +15,11 @@ void prologue() {
 	PlaySoundMem(main, DX_PLAYTYPE_LOOP);
 	char logo[256] = "<Press A Botton>";
 	char tmpString[256];
+
+	for (int i = 0; i < 256; i++) {
+		tmpString[i] = '\0';
+	}
+
 	int e = 0;
 	while (keyState[KEY_INPUT_A] == 0 && ScreenFlip() == 0 && getCountFrame() == 0 && ClearDrawScreen() == 0) {
 		DrawRotaGraph(400, 250, 1.0, 0, title[0], false);
@@ -24,7 +29,7 @@ void prologue() {
 		ChangeFont("HGS創英角ﾎﾟｯﾌﾟ体");              //HGS創英角ﾎﾟｯﾌﾟ体に変更
 		ChangeFontType(DX_FONTTYPE_ANTIALIASING_EDGE);//アンチエイリアス＆エッジ付きフォントに変更
 		DrawFormatString(230, 420, GetColor(255, 0, 0), "%s", logo);
-		/*500ms(0.5秒)に一度画像更新*/
+		/*1500ms(1.5秒)に一度画像更新*/
 		if (GetNowCount() - tempTime > 1500)
 		{
 			if (f_num == 1) {
@@ -44,21 +49,13 @@ void prologue() {
 	StopSoundMem(main);
 
 	PlaySoundMem(start, DX_PLAYTYPE_LOOP);
-	//ChangeFont("游ゴシック　Light");              //変更
+	ChangeFont("游ゴシック　Light");              //変更
 	SetFontSize(20);                             //サイズを64に変更
 	SetFontThickness(4);                         //太さを8に変更
-	DrawRotaGraph(400, 300, 3.5, 0, bl, true);
-	sprintf_s(tmpString,256, "ようこそポケモンの世界へ");
-	showDisplay(tmpString);
-	initMessage();
-
-	sprintf_s(tmpString, 256,"今からあなたにはダンジョンをクリアしてもらう");
-	showDisplay(tmpString);
-	initMessage();
-
-	sprintf_s(tmpString, 256,"では初めにプレイするポケモンを選んでもらおう");
-	showDisplay(tmpString);
-	initMessage();
+	ClearDrawScreen();
+	showMessage("ようこそポケモンの世界へ");
+	showMessage("今からあなたにはダンジョンをクリアしてもらう");
+	showMessage("では初めにプレイするポケモンを選んでもらおう");
 
 	double angle = 0;
 	int e_num = 0;
@@ -74,7 +71,6 @@ void prologue() {
 		initMessage();
 		sprintf_s(tmpString, 256, "では初めにプレイするポケモンを選んでもらおう");
 		setMessage(tmpString);
-		messageflag = true;
 		outMessage();
 		
 
@@ -211,10 +207,8 @@ void prologue() {
 			PlaySoundMem(select, DX_PLAYTYPE_BACK);
 			sprintf_s(tmpString, "%sでいいかな?",z[e-1]->name);
 			setMessage(tmpString);
-			sprintf_s(tmpString, "YES→Y");
-			setMessage(tmpString);
-			sprintf_s(tmpString, "NO→N");
-			setMessage(tmpString);
+			setMessage("YES→Y");
+			setMessage("NO→N");
 			messageflag = true;
 			while (getCountFrame()==0 && ScreenFlip()==0 && ProcessMessage() == 0) {
 				outMessage();

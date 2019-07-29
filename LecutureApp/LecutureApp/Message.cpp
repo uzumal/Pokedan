@@ -11,7 +11,6 @@ int messageBox;
 bool menuflag = false;
 bool messageflag = false;
 
-void showDisplay(char[]);
 
 /*下のコンソール初期化*/
 void initConsole() {
@@ -74,26 +73,80 @@ void initMessage() {
 }
 
 
-void showDisplay(char ss[]) {
+
+void showMessage(char s[]) {
 	int sound = LoadSoundMem("音楽/string.mp3");
-	char tmp[256];
-	//一応初期化
-	for (int i = 0; i < 256; i++) { tmp[i] = '\0'; }
+	char tmpSt[256];
+	//一応初期化、\0では文字化けが起きたので空白で初期化
+	for (int i = 0; i < 256; i++) { tmpSt[i] = ' '; }
 
 	messageflag = true;
-
-	for (int i = 0; ss[i] != '\0'; i++) {
-		ScreenFlip();
-		wait(10);
-		PlaySoundMem(sound, DX_PLAYTYPE_BACK);
-		tmp[i] = ss[i];
+	for (int k = 0; s[k] != '\0'; k++) {
 		initMessage();
-		setMessage(tmp);
+		PlaySoundMem(sound, DX_PLAYTYPE_BACK);
+		tmpSt[k] = s[k];
+		//setMessageを使用するとエラーが起きたので手動で入れる
+		for (int i = 0; i < 256; i++)message1[i] = tmpSt[i];
+		messageflag = true;		
 		outMessage();
+		ScreenFlip();
+		wait(3);
 	}
 	initMessage();
-	setMessage(ss);
+	setMessage(s);
 	outMessage();
 	ScreenFlip();
 	wait_key(KEY_INPUT_A);
+	initMessage();
+}
+
+void talk(pokemon* me,char s[]) {
+	int sound = LoadSoundMem("音楽/string.mp3");
+	char tmpSt[256];
+	//一応初期化、\0では文字化けが起きたので空白で初期化
+	for (int i = 0; i < 256; i++) { tmpSt[i] = ' '; }
+	int tmp = 0;
+	int tmp2 = 0;
+	messageflag = true;
+	initConsole();
+	for (int i = 0; i < 256; i++) { message1[i] = me->name[i]; }
+	DrawFormatString(100, 487, RED, "%s", message1);
+	ScreenFlip();
+	for (int k = 0; s[k] != '\0'; k++) {
+		PlaySoundMem(sound, DX_PLAYTYPE_BACK);
+		tmpSt[k] = s[k];
+		//setMessageを使用するとエラーが起きたので手動で入れる
+		for (int i = 0; i < 256; i++) { message2[i] = tmpSt[i]; }
+		DrawFormatString(100, 517, WHITE, "%s", message2);
+		messageflag = true;
+		ScreenFlip();
+		wait(3);
+	}
+	DrawFormatString(100, 517, WHITE, "%s", s);
+	ScreenFlip();
+	wait_key(KEY_INPUT_A);
+	initMessage();
+}
+
+void drawExplain() {
+	bool explain = false;
+	setMessage("操作説明は必要ですか?");
+	setMessage("YES→Y");
+	setMessage("NO→N");
+	outMessage();
+	while (getCountFrame() == 0 && ScreenFlip() == 0 && ProcessMessage() == 0) {
+		if (keyState[KEY_INPUT_Y]) { explain = true; break; }
+		if (keyState[KEY_INPUT_N]) { explain = false; break; }
+	}
+	if (explain) {
+		showMessage("操作説明");
+		showMessage("Q,W,E,A,D,Z,X,Cでそれぞれの方向に動きます");
+		showMessage("Yを押しながら先程の移動キーを押すと方向だけ変えます");
+		showMessage("Iでわざメニューを開け、数字でわざを選べます");
+		showMessage("Jでセットしたわざで敵に攻撃できます");
+		showMessage("敵の方を向いていないと攻撃が当たらないので注意してください");
+		showMessage("spaceキーを押すと強制的にゲームを終了できます");
+		showMessage("それではポケダンをお楽しみください");
+	}
+	initMessage();
 }

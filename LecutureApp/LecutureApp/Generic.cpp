@@ -17,7 +17,6 @@ void wait(int ms);
 int getRandom(int min, int max);
 bool isPutMoveKey();
 void levelUp(int level);
-void drawCharacter(pokemon* me, int d_num);
 
 void wait_key(int key) {
 	while (getCountFrame() == 0) {
@@ -47,6 +46,8 @@ void levelUp(int level) {
 	c->maxHp += 5;
 	c->hp = c->maxHp;
 }
+
+
 /*キーが押されているフレーム数を数える*/
 int getCountFrame() {
 	char tmpKey[256];								// 現在のキーの入力状態を格納する
@@ -101,15 +102,6 @@ bool isPutMoveKey() {
 
 }
 
-void drawCharacter(pokemon* me, int d_num) {
-	//生きていれば表示
-	if (me->isLive) {
-		/*座標は画像の真ん中に持つ*/
-		/*DrawRotaGraph(x座標,y座標,縮尺度,角度,描画する画像ハンドル,背景透過処理のON,OFF)*/
-		DrawRotaGraph(me->x + 20, me->y + 20, 1.5, 0, me->moveTexture[me->direction][d_num], true);
-	}
-}
-
 
 //敵が死んでいるか判定
 bool life(pokemon* enemy, pokemon* me) {
@@ -130,7 +122,7 @@ bool life(pokemon* enemy, pokemon* me) {
 			enemy->experience = enemy->experience - me->Max_ex;
 			me->level++;
 			me->Max_ex += 30;
-			sprintf_s(s, "%sは%dレベルに上がった！", me->name, me->level);
+			sprintf_s(s, "%sはレベル%dになった！", me->name, me->level);
 			setMessage(s);
 			outMessage();
 			wait(400);
@@ -142,3 +134,5 @@ bool life(pokemon* enemy, pokemon* me) {
 	}
 	return FALSE;
 }
+
+
