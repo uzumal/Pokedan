@@ -134,6 +134,8 @@ int saveData() {
 		else if (c->name == MAINCHARANAME3)name = 2;
 		sprintf_s(ss, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",name,c->maxHp,c->hp,c->skill[0].count,c->skill[1].count, c->skill[2].count, c->skill[3].count,c->attackNum,c->level,c->experience,c->Max_ex,c->x,c->y,c->direction,m->floor,m->x,m->y);
 		fputs(ss, fp);
+		sprintf_s(ss, "isLive,‘Ì—Í,‚í‚´ƒJƒEƒ“ƒg1,2,3,4,x,y,direction\n");
+		fputs(ss, fp);
 		for (int i = 0; i < FLOORNUM - 1; i++) {
 			for (int j = 0; j < ENEMYNUM; j++) {
 				isLive = 0;
@@ -243,13 +245,13 @@ int readData() {
 				m->x = atoi(strtok_s(NULL, delim, &ctx));
 				m->y = atoi(strtok_s(NULL, delim, &ctx));
 			}
-			else if (count >= 2) {
+			else if (count >= 3) {
 				pokemon* e = new pokemon;
-				if (count - 2 < 3) {
-					e = enemy[0][count-2];
+				if (count - 3 < 3) {
+					e = enemy[0][count-3];
 				}
-				else if (count - 2 < 6) {
-					e = enemy[1][count - 5];
+				else if (count - 3 < 6) {
+					e = enemy[1][count - 6];
 				}
 				else {
 					e = lastboss;
