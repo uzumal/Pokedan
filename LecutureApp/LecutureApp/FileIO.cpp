@@ -95,6 +95,21 @@ void setPoke(pokemon* me) {
 
 int saveData() {
 
+
+	pokemon* saveEnemy[FLOORNUM - 1][ENEMYNUM];
+	for (int j = 0; j < FLOORNUM - 1; j++) {
+		for (int i = 0; i < ENEMYNUM; i++) {
+			if (enemy[j][i]->name == ENEMYNAME1) { saveEnemy[0][0] = enemy[j][i]; }
+			if (enemy[j][i]->name == ENEMYNAME2) { saveEnemy[0][1] = enemy[j][i]; }
+			if (enemy[j][i]->name == ENEMYNAME3) { saveEnemy[0][2] = enemy[j][i]; }
+			if (enemy[j][i]->name == ENEMYNAME4) { saveEnemy[1][0] = enemy[j][i]; }
+			if (enemy[j][i]->name == ENEMYNAME5) { saveEnemy[1][1] = enemy[j][i]; }
+			if (enemy[j][i]->name == ENEMYNAME6) { saveEnemy[1][2] = enemy[j][i]; }
+		}
+	}
+
+
+
 	FILE* fp;
 
 	int maxMonth = 0;
@@ -111,10 +126,25 @@ int saveData() {
 		char ss[BUFFSIZE];
 		sprintf_s(ss, "名前,最大体力,体力,わざカウント1,2,3,4,セットわざ,レベル,経験値,MAX経験値,x,y,direction,階数,m->x,m->y\n");
 		fputs(ss, fp);
-		int n = 0;
-		if (c->name == "ヒノアラシ")n = 1;
-		else if (c->name == "ゼニガメ")n = 2;
-		sprintf_s(ss, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",n,c->maxHp,c->hp,c->skill[0].count,c->skill[1].count, c->skill[2].count, c->skill[3].count,c->attackNum,c->level,c->experience,c->Max_ex,c->x,c->y,c->direction,m->floor,m->x,m->y);
+		int isLive = 0;
+		int name = 0;
+		if (c->name == "ヒノアラシ")name = 1;
+		else if (c->name == "ゼニガメ")name = 2;
+		sprintf_s(ss, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",name,c->maxHp,c->hp,c->skill[0].count,c->skill[1].count, c->skill[2].count, c->skill[3].count,c->attackNum,c->level,c->experience,c->Max_ex,c->x,c->y,c->direction,m->floor,m->x,m->y);
+		fputs(ss, fp);
+		for (int i = 0; i < FLOORNUM - 1; i++) {
+			for (int j = 0; j < ENEMYNUM; j++) {
+				isLive = 0;
+				pokemon* e = saveEnemy[i][j];
+				if (saveEnemy[i][j]->isLive)isLive = 1;//生きてたら1
+				sprintf_s(ss, "%d,%d,%d,%d,%d,%d,%d,%d,%d\n",isLive,e->hp,e->skill[0].count,e->skill[1].count,e->skill[2].count,e->skill[3].count,e->x,e->y,e->direction);
+				fputs(ss, fp);
+			}
+		}
+		isLive = 0;
+		pokemon* e = lastboss;
+		if (e->isLive)isLive = 1;//生きてたら1
+		sprintf_s(ss, "%d,%d,%d,%d,%d,%d,%d,%d,%d\n",isLive, e->hp, e->skill[0].count, e->skill[1].count, e->skill[2].count, e->skill[3].count, e->x, e->y, e->direction);
 		fputs(ss, fp);
 
 		fclose(fp);
@@ -152,7 +182,7 @@ int readData() {
 			p1 = strtok_s(ss, delim, &ctx);
 
 			//1行飛ばして代入
-			if (count >= 1) {
+			if (count == 1) {
 				switch (atoi(p1)) {
 				case 0:
 					c->name = "ピカチュウ";
@@ -166,6 +196,7 @@ int readData() {
 				default:
 					break;
 				}
+				//わざなどの初期値を入れた後にセーブデータを参照
 				charaSet(c);
 				c->maxHp = atoi(strtok_s(NULL, delim, &ctx));
 				c->hp = atoi(strtok_s(NULL, delim, &ctx));
@@ -186,7 +217,29 @@ int readData() {
 				m->x = atoi(strtok_s(NULL, delim, &ctx));
 				m->y = atoi(strtok_s(NULL, delim, &ctx));
 			}
+			else if (count >= 2) {
+				pokemon* e = new pokemon;
+				if (count - 2 < 3) {
+					e = enemy[0][count-2];
+				}
+				else if (count - 2 < 6) {
+					e = enemy[1][count - 5];
+				}
+				else {
+					e = lastboss;
+				}
 
+				charaSet(e);
+				if (!atoi(p1))e->isLive = false;
+				e->hp = atoi(strtok_s(NULL, delim, &ctx));;
+				e->skill[0].count = atoi(strtok_s(NULL, delim, &ctx));
+				e->skill[1].count = atoi(strtok_s(NULL, delim, &ctx));
+				e->skill[2].count = atoi(strtok_s(NULL, delim, &ctx));
+				e->skill[3].count = atoi(strtok_s(NULL, delim, &ctx));
+				e->x = atoi(strtok_s(NULL, delim, &ctx));
+				e->y = atoi(strtok_s(NULL, delim, &ctx));
+				e->direction = atoi(strtok_s(NULL, delim, &ctx));
+			}
 			count++;
 		}
 

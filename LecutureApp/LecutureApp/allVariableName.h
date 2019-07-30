@@ -56,3 +56,4 @@ extern bool menuflag;
 
 extern bool endflag; 
 extern bool continueflag;
+extern bool isReturn;

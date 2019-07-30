@@ -29,6 +29,7 @@ void stairsMove(int stairs) {
 		
 	}
 	else {
+		isReturn = false;
 		//BGMé~ÇﬂÇÈ
 		StopSoundMem(bgm);
 		//É{ÉXêÌBGM

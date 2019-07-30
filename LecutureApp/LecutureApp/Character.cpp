@@ -21,6 +21,8 @@ int y_prev = 0;
 bool onGround = false;		//ジャンプする瞬間
 bool jump = false;			//ジャンプしているかどうか	
 
+bool isReturn = false;
+
 pokemon poke;
 pokemon* c = &poke;
 pokemon poke1;
@@ -293,15 +295,32 @@ void mainCharaMove() {
 			}
 		}
 	}
+	//セーブ
 	if (!menuflag && keyState[KEY_INPUT_K] == 1) {
 		if (saveData() == -1) { 
 			setMessage("セーブに失敗しました");
 			outMessage();
 		}
 		else{
-			wait(100);
+
+			isReturn = false;
+
 			setMessage("セーブに成功しました");
 			outMessage();
+			ScreenFlip();
+			wait(1000);
+			setMessage("タイトルに戻りますか?");
+			setMessage("はい->Y   いいえ->N");
+			outMessage();
+			ScreenFlip();
+			while (true && getCountFrame()==0) {
+				if (keyState[KEY_INPUT_Y]==1) { isReturn = true; break; }
+				if (keyState[KEY_INPUT_N]==1) { break; }
+			}
+			initMessage();
+			if (isReturn) {
+				StopSoundMem(bgm); endflag = true;
+			}
 		}
 	}
 	/*Right*/
@@ -336,6 +355,9 @@ void mainCharaMove() {
 	else if (!menuflag && keyState[KEY_INPUT_Z] == 1) {
 		charaMove(c, -1, 1);
 	}
+
+	/*spaceキーで終わり*/
+	if (keyState[KEY_INPUT_SPACE] == 1) { isReturn = false; endflag = true; }
 
 	/*階段移動処理*/
 	if (mapping[m->floor][GY][GX] == 100) {

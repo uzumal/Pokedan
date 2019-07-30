@@ -7,8 +7,6 @@ bool endflag = false;
 bool startflag = false;
 
 void gameover() {
-	StopSoundMem(bgm);
-	StopSoundMem(boss_bgm);
 	int overSound = LoadSoundMem("音楽/over.mp3");
 	char h[256];
 	sprintf_s(s, "プレイヤーは死んでしまった!");
@@ -29,13 +27,13 @@ void gameover() {
 		DrawRotaGraph(400, 300, 1.5, 0, over[0], false);
 		DrawFormatString(270, 470, GetColor(255, 0, 0), "%s", h);
 		DrawFormatString(300, 520, GetColor(0, 255, 0), "%s", s);
-		if (keyState[KEY_INPUT_A] == 1) { endflag = true; break; }
+		if (keyState[KEY_INPUT_A] == 1) { isReturn = false; endflag = true; break; }
 		if (keyState[KEY_INPUT_B] == 1) { break; }
 	}
+	initMessage();
 }
 
 void gameClear() {
-	StopSoundMem(boss_bgm);
 	int clearSound = LoadSoundMem("音楽/clear.mp3");
 	char h[256];
 	char clear[256];
@@ -58,7 +56,8 @@ void gameClear() {
 		DrawFormatString(SCREEN_WIDTH/2-100, SCREEN_HEIGHT/2, WHITE, "%s", clear);
 		DrawFormatString(270, 470, RED, "%s", h);
 		DrawFormatString(300, 520, BLUE, "%s", s);
-		if (keyState[KEY_INPUT_A] == 1) { endflag = true; break; }
+		if (keyState[KEY_INPUT_A] == 1) { isReturn = false; endflag = true; break; }
 		if (keyState[KEY_INPUT_B] == 1) { break; }
 	}
+	initMessage();
 }

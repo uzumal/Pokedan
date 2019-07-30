@@ -3,10 +3,12 @@
 #include "Enemy.h"
 #include "Generic.h"
 #include "allVariableName.h"
+#include "Message.h"
 
 void allView(int);
 void drawCharacter(pokemon*, int);
 void drawHpBar();
+void drawExplain();
 
 void allView(int d_num) {
 
@@ -55,7 +57,35 @@ void drawHpBar() {
 	if (c->hp <= c->maxHp / 3) { hpColor = RED; }
 	else if (c->hp <= c->maxHp / 2) { hpColor = YELLOW; }
 	else { hpColor = GREEN; }
-	DrawBox(240, 1, c->maxHp + 240, 15, BLACK, true);
-	DrawBox(240, 1, c->hp + 240, 15, hpColor, true);
-	DrawBox(239, 0, c->maxHp + 241, 16, WHITE, false);
+	DrawBox(250, 1, c->maxHp + 250, 15, BLACK, true);
+	DrawBox(250, 1, c->hp + 250, 15, hpColor, true);
+	DrawBox(249, 0, c->maxHp + 251, 16, WHITE, false);
+}
+
+
+void drawExplain() {
+	bool explain = false;
+	setMessage("操作説明は必要ですか?");
+	setMessage("YES→Y");
+	setMessage("NO→N");
+	outMessage();
+	while (getCountFrame() == 0 && ScreenFlip() == 0 && ProcessMessage() == 0) {
+		if (keyState[KEY_INPUT_Y]) { explain = true; break; }
+		if (keyState[KEY_INPUT_N]) { explain = false; break; }
+	}
+	if (explain) {
+		showMessage("操作説明");
+		showMessage("Q,W,E,A,D,Z,X,Cでそれぞれの方向に動きます");
+		showMessage("Yを押しながら先程の移動キーを押すと方向だけ変えます");
+		showMessage("Iでわざメニューを開け、数字でわざを選べます");
+		showMessage("Jでセットしたわざで敵に攻撃できます");
+		showMessage("敵の方を向いていないと攻撃が当たらないので注意してください");
+		showMessage("spaceキーを押すと強制的にゲームを終了できます");
+		showMessage("Kでセーブができます");
+		showMessage("敵はある一定の近さになると追ってきます");
+		showMessage("それ以外はランダムに動いています");
+		showMessage("最下層に居るボスモンスターを倒すとゲームクリアとなります");
+		showMessage("それではポケダンをお楽しみください");
+	}
+	initMessage();
 }

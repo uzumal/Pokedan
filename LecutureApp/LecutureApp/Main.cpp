@@ -31,7 +31,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		ClearDrawScreen();
 		/*bgm再生開始*/
-		PlaySoundMem(bgm, DX_PLAYTYPE_LOOP);
+		if (m->floor != 2) {
+			PlaySoundMem(bgm, DX_PLAYTYPE_LOOP);
+		}
+		else {
+			PlaySoundMem(boss_bgm, DX_PLAYTYPE_LOOP);
+		}
 		for (int i = 0; i < 256; i++) {
 			SetDrawBright(i, i, i);
 			allView(d_num);
@@ -42,11 +47,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			initMessage();
 			drawExplain();
 		}
+		isReturn = true;
 		over = false;
 		clear = false;
 		story = false;
 		messageflag = false;
 		continueflag = false;
+		endflag = false;
 		/*描画する*/
 		// while(裏画面を表画面に反映, メッセージ処理, 画面クリア,フレームカウント)
 		while (ScreenFlip() == 0 && ProcessMessage() == 0 && ClearDrawScreen() == 0 && getCountFrame() == 0 && m->floor != 2) {
@@ -82,11 +89,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				mainEnemyMove(tmp_mx, tmp_my);
 			}
 
-			/*spaceキーで終わり*/
-			if (keyState[KEY_INPUT_SPACE] == 1) { endflag = true; break; }
-
+			if (endflag) { break; }
 		}
-		if (m->floor == 2) {
+		if (m->floor == 2 && !isReturn) {
 			for (int i = 0; i < 256; i++) {
 				SetDrawBright(i, i, i);
 				allView(d_num);
@@ -100,6 +105,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			talk(c, "誰やねん...");
 			
 		}
+
 		//ボス用
 		while (ScreenFlip() == 0 && ProcessMessage() == 0 && ClearDrawScreen() == 0 && getCountFrame() == 0 && m->floor == 2) {
 			tmp_mx = m->x;
@@ -134,13 +140,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			mainBossMove(tmp_mx, tmp_my);
 
 			/*spaceキーで終わり*/
-			if (keyState[KEY_INPUT_SPACE] == 1) { endflag = true; break; }
+			if (endflag) { break; }
 		}
-
-		if (endflag)break;
+		StopSoundMem(boss_bgm);
+		StopSoundMem(bgm);
+		if (endflag && !isReturn)break;
 		else if (over)gameover();
 		else if(clear)gameClear();
-		if (endflag)break;
+		if (endflag && !isReturn)break;
 	}
 	DxLib::DxLib_End();    // DXライブラリ終了処理
 	

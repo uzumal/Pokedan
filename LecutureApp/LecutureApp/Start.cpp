@@ -18,6 +18,11 @@ void prologue() {
 	char logo[256] = "はじめから";
 	char logo2[256] = "つづきから";
 
+	FILE *fp;
+	errno_t error;
+
+	error = fopen_s(&fp, "saveData.txt", "r");
+
 	while (keyState[KEY_INPUT_A] == 0 && ScreenFlip() == 0 && getCountFrame() == 0 && ClearDrawScreen() == 0) {
 		DrawRotaGraph(400, 250, 1.0, 0, title[0], false);
 		DrawRotaGraph(400, 250, 1.5, 0, title[1], true);
@@ -25,17 +30,31 @@ void prologue() {
 		SetFontThickness(8);                         //太さを8に変更
 		ChangeFont("HGS創英角ﾎﾟｯﾌﾟ体");              //HGS創英角ﾎﾟｯﾌﾟ体に変更
 		ChangeFontType(DX_FONTTYPE_ANTIALIASING_EDGE);//アンチエイリアス＆エッジ付きフォントに変更
-		if (!continueflag && keyState[KEY_INPUT_RIGHT] == 1) { continueflag = true; PlaySoundMem(select, DX_PLAYTYPE_BACK); }
 		if (continueflag && keyState[KEY_INPUT_LEFT] == 1) { continueflag = false; PlaySoundMem(select, DX_PLAYTYPE_BACK); }
+		if (!continueflag && keyState[KEY_INPUT_RIGHT] == 1) { 
+			if (error == 0) {
+				continueflag = true; PlaySoundMem(select, DX_PLAYTYPE_BACK);
+			}
+			else {
+				initMessage();
+				setMessage("セーブデータがないので選べません");
+				outMessage();
+				ScreenFlip();
+				tempTime = GetNowCount();
+			}
+		}
 
-		if (!continueflag)DrawFormatString(170, 450, WHITE, "◇");
-		if (continueflag)DrawFormatString(390, 450, WHITE, "◇");
+		outMessage();
+
+		if (!continueflag)DrawFormatString(230, 455, WHITE, "◇");
+		if (continueflag)DrawFormatString(500, 455, WHITE, "◇");
 
 		DrawFormatString(160, 420, RED, "%s", logo);
-		DrawFormatString(360, 420, BLUE, "%s", logo2);
+		DrawFormatString(430, 420, BLUE, "%s", logo2);
 		/*1500ms(1.5秒)に一度画像更新*/
 		if (GetNowCount() - tempTime > 1500)
-		{
+		{	
+			initMessage();
 			if (f_num == 1) {
 				f_num = 0;
 				DrawRotaGraph(400, 250, 1.0, 0, title[0], false);
@@ -49,6 +68,11 @@ void prologue() {
 		}
 	}
 	StopSoundMem(main);
+	ChangeFont("游ゴシック　Light");              //変更
+	SetFontSize(20);                             //サイズを64に変更
+	SetFontThickness(4);                         //太さを8に変更
+	ClearDrawScreen();
+	fclose(fp);
 	if (!continueflag)gameStart();
 }
 
@@ -65,10 +89,6 @@ void gameStart() {
 	int e = 0;
 
 	PlaySoundMem(startSound, DX_PLAYTYPE_LOOP);
-	ChangeFont("游ゴシック　Light");              //変更
-	SetFontSize(20);                             //サイズを64に変更
-	SetFontThickness(4);                         //太さを8に変更
-	ClearDrawScreen();
 	showMessage("ようこそポケモンの世界へ");
 	showMessage("今からあなたにはダンジョンをクリアしてもらう");
 	showMessage("では初めにプレイするポケモンを選んでもらおう");

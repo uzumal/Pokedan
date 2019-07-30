@@ -38,6 +38,14 @@
 #define BLACK	GetColor(0,0,0)
 #define BG		GetColor(20,20,20)
 
+#define ENEMYNAME1	"フシギダネ"
+#define ENEMYNAME2	"ディグダ"
+#define ENEMYNAME3	"グラードン"
+#define ENEMYNAME4	"ダークライ"
+#define ENEMYNAME5	"ボスゴドラ"
+#define ENEMYNAME6	"スイクン"
+#define BOSSNAME	"ミュウツー"
+
 #define ENEMYNUM 3
 #define PI 3.141592654
 

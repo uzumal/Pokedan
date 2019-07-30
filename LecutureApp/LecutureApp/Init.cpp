@@ -101,6 +101,15 @@ void charaInit() {
 	m->x = 0;
 	m->y = 0;
 
+	enemy[0][0]->name = ENEMYNAME1;
+	enemy[0][1]->name =	ENEMYNAME2;
+	enemy[0][2]->name = ENEMYNAME3;
+	enemy[1][0]->name = ENEMYNAME4;
+	enemy[1][1]->name = ENEMYNAME5;
+	enemy[1][2]->name = ENEMYNAME6;
+	
+	lastboss->name = BOSSNAME;
+
 	if (continueflag) {
 		if (readData() == -1) {
 			setMessage("データを読み込めませんでした");
@@ -113,24 +122,13 @@ void charaInit() {
 		/*初期座標位置*/
 		c->x = CHIP_SIZE * 3;
 		c->y = CHIP_SIZE * 3;
-	}
-
-	enemy[0][0]->name = "フシギダネ";
-	enemy[0][1]->name = "ディグダ";
-	enemy[0][2]->name = "ディグダ";
-	enemy[1][0]->name = "ダークライ";
-	enemy[1][1]->name = "ボスゴドラ";
-	enemy[1][2]->name = "スイクン";
-	
-	lastboss->name = "ミュウツー";
-
-	for (int i = 0; i < FLOORNUM - 1; i++) {
-		for (int j = 0; j < ENEMYNUM; j++) {
-			charaSet(enemy[i][j]);
+		for (int i = 0; i < FLOORNUM - 1; i++) {
+			for (int j = 0; j < ENEMYNUM; j++) {
+				charaSet(enemy[i][j]);
+			}
 		}
+		charaSet(lastboss);
 	}
-
-	charaSet(lastboss);
 
 	for (int i = 0; i < FLOORNUM; i++) {
 		for (int j = 0; j < MAP_YNUM; j++) {
@@ -140,9 +138,9 @@ void charaInit() {
 		}
 	}
 
-
-	randomEnemyPut(enemy[m->floor]);
-
+	if (!continueflag) {
+		randomEnemyPut(enemy[m->floor]);
+	}
 }
 
 void nameSet(pokemon* me,char* s) {

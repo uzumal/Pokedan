@@ -127,26 +127,3 @@ void talk(pokemon* me,char s[]) {
 	wait_key(KEY_INPUT_A);
 	initMessage();
 }
-
-void drawExplain() {
-	bool explain = false;
-	setMessage("操作説明は必要ですか?");
-	setMessage("YES→Y");
-	setMessage("NO→N");
-	outMessage();
-	while (getCountFrame() == 0 && ScreenFlip() == 0 && ProcessMessage() == 0) {
-		if (keyState[KEY_INPUT_Y]) { explain = true; break; }
-		if (keyState[KEY_INPUT_N]) { explain = false; break; }
-	}
-	if (explain) {
-		showMessage("操作説明");
-		showMessage("Q,W,E,A,D,Z,X,Cでそれぞれの方向に動きます");
-		showMessage("Yを押しながら先程の移動キーを押すと方向だけ変えます");
-		showMessage("Iでわざメニューを開け、数字でわざを選べます");
-		showMessage("Jでセットしたわざで敵に攻撃できます");
-		showMessage("敵の方を向いていないと攻撃が当たらないので注意してください");
-		showMessage("spaceキーを押すと強制的にゲームを終了できます");
-		showMessage("それではポケダンをお楽しみください");
-	}
-	initMessage();
-}
