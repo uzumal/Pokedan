@@ -1,19 +1,7 @@
-﻿  Character.cpp
-  End.cpp
-  Enemy.cpp
-  FileIO.cpp
-  Generic.cpp
-  Init.cpp
-  Main.cpp
-  Map.cpp
-  Menu.cpp
-  Message.cpp
-  Start.cpp
-  View.cpp
-C:\Users\user\source\repos\Pokedan\LecutureApp\LecutureApp\Character.cpp(131,16): warning C4244:  '*=': 'double' から 'int' への変換です。データが失われる可能性があります。
+﻿  Main.cpp
   コード生成しています。
-  0 of 367 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
+  1 of 367 functions ( 0.3%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
+    1 functions had inline decision re-evaluated but remain unchanged
   コード生成が終了しました。
   LecutureApp.vcxproj -> C:\Users\user\source\repos\Pokedan\LecutureApp\x64\Release\LecutureApp.exe
