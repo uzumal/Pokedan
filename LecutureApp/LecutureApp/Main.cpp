@@ -72,22 +72,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//地図やキャラなどの描画関数
 			allView(d_num);
 			
-			/*メッセージは常に出力*/
-			outMessage();
 
 			//自分が死んだら
 			if (c->hp == 0) { over = true; break; }
 
-			/*iを押すとメニュー表示、再度押すか技を選ぶと消去*/
-			showMenu();
-
-
 			/*主人公の動き、移動や攻撃、階段移動*/
 			mainCharaMove();
+			allView(d_num);
 			/*敵の動き、移動や攻撃*/
 			if (m->floor != 2) {
 				mainEnemyMove(tmp_mx, tmp_my);
 			}
+			/*メッセージは常に出力*/
+			outMessage();
+			/*iを押すとメニュー表示、再度押すか技を選ぶと消去*/
+			showMenu();
 
 			if (endflag) { break; }
 		}

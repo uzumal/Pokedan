@@ -1,6 +1,7 @@
 #pragma once
 #include "all.h"
 #include "allVariableName.h"
+#include "Message.h"
 
 void drawMenu() {
 	int x = 0;
@@ -29,6 +30,7 @@ void showMenu() {
 	}
 
 	if (menuflag) {
+		initMessage();
 		drawMenu();
 	}
 }

@@ -7,6 +7,7 @@
 #include "Message.h"
 #include "mapping.h"
 #include "FileIO.h"
+#include "View.h"
 
 #define GX (c->x/CHIP_SIZE - m->x)
 #define GY (c->y/CHIP_SIZE - m->y)
@@ -50,9 +51,9 @@ void setDirection(pokemon* me, int direction) {
 void charaMove(pokemon* me, int x, int y) {
 
 	//動くたびに回復
-	if (recorvery == 0 && c->hp < c->maxHp)c->hp++;
+	if (!keyState[KEY_INPUT_Y] && recorvery == 0 && c->hp < c->maxHp)c->hp++;
 
-	if (recorvery > 0)recorvery--;
+	if (!keyState[KEY_INPUT_Y] && recorvery > 0)recorvery--;
 
 	//マップ移動用
 	int mx = 0;

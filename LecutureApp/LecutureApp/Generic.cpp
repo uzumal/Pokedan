@@ -6,24 +6,6 @@
 #include "Message.h"
 
 
-#define NORMAL 0
-#define FIRE 1
-#define WATER 2
-#define ELECTRIC 3
-#define GLASS 4
-#define ICE 5
-#define FIGHT 6
-#define POISON 7
-#define GROUND 8
-#define FLIGHT 9
-#define ESPER 10
-#define INSECT 11
-#define ROCK 12
-#define GHOST 13
-#define DRAGON 14
-#define EVIL 15
-#define STEEL 16
-
 double skillTable[17][17] = {
 	//ノ	//ほの	//みず	//でん	//くさ	//こお	//かく	//どく　//じめ	//ひこ	//エス	//むし	//いわ	//ゴー	//ドラ	//あく	//はがね
 	{1,		1,		1,		1,		1,		1,		1,		1,		1,		1,		1,		1,		0.5,	0,		1,		1,		0.5},	//ノーマル
