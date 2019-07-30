@@ -125,7 +125,9 @@ void charaMove(pokemon* me, int x, int y) {
 void attack(pokemon* me, pokemon* enemy) {
 
 	//turnToPokemon(me, enemy);//敵の方を向く
-	int value = getRandom(me->skill[me->attackNum].min, me->skill[me->attackNum].max);	//わざを出すたびに乱数生成
+	int value = getRandom(me->skill[me->attackNum].min + me->baseAttack, me->skill[me->attackNum].max + me->baseAttack);	//わざを出すたびに乱数生成
+	double ratio = skillCalc(me->skill[me->attackNum].type, enemy->type);
+	value *= ratio;
 	if (me->skill[me->attackNum].count > 0) {
 		//敵の方を向いている場合
 		if (enemy->isLive && isNearPokemon(me, enemy) && ((me->y == enemy->y && ((me->x > enemy->x && me->direction == LEFT) || (me->x < enemy->x && me->direction == RIGHT))) || (me->x == enemy->x && ((me->y > enemy->y && me->direction == UP || me->y<enemy->y && me->direction == DOWN))))) {
@@ -135,27 +137,41 @@ void attack(pokemon* me, pokemon* enemy) {
 				enemy->hp -= value;
 				if (enemy->hp < 0)enemy->hp = 0;//hpがマイナスになるのを防ぐ
 				sprintf_s(s, "%sの%s! %sに%dのダメージ!%sのHP:%d", me->name, me->skill[me->attackNum].name, enemy->name, value, enemy->name, enemy->hp);
-				PlaySoundMem(slap, DX_PLAYTYPE_BACK);
+				setMessage(s);
+				if (ratio == 2)setMessage("効果はばつぐんだ!");
+				else if (ratio == 0.5)setMessage("効果はいまひとつのようだ");
+				else if (ratio == 0)setMessage("効果はないようだ...");
+				outMessage();
+				ScreenFlip();
+				
+				PlaySoundMem(slap, DX_PLAYTYPE_NORMAL);
 			}
 			else {
 				sprintf_s(s, "%sの%s!しかし攻撃は外れた", me->name, me->skill[me->attackNum].name);
-				PlaySoundMem(slap, DX_PLAYTYPE_BACK);
+				setMessage(s);
+				outMessage();
+				ScreenFlip();
+				PlaySoundMem(slap, DX_PLAYTYPE_NORMAL);
 			}
 		}//敵の方を向いていない場合
 		else {
 			/*攻撃が外れる*/
 			sprintf_s(s, "%sの%s!しかし攻撃は外れた", me->name, me->skill[me->attackNum].name);
-			PlaySoundMem(slap, DX_PLAYTYPE_BACK);
+			setMessage(s);
+			outMessage();
+			ScreenFlip();
+			PlaySoundMem(slap, DX_PLAYTYPE_NORMAL);
 		}
 	}
 	else {
 		sprintf_s(s, "%sはもう使えない!", me->skill[me->attackNum].name);
+		setMessage(s);
+		outMessage();
+		ScreenFlip();
 	}
 	me->skill[me->attackNum].count -= 1;
 	if (me->skill[me->attackNum].count < 0)me->skill[me->attackNum].count = 0;	//マイナスを防ぐ
-	messageflag = true;
-	setMessage(s);
-	outMessage();
+	
 }
 
 //敵が周りにおらず攻撃が必ず外れる場合
@@ -315,6 +331,8 @@ void mainCharaMove() {
 
 			isReturn = false;
 
+
+			PlaySoundMem(report, DX_PLAYTYPE_BACK);
 			setMessage("セーブに成功しました");
 			outMessage();
 			ScreenFlip();

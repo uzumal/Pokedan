@@ -14,6 +14,7 @@ int click;
 int boss_bgm;
 int startSound;
 int levelUP;
+int report;
 
 /*画像ファイルメモリ用配列*/
 int skillBox;
@@ -84,12 +85,13 @@ int init() {
 
 	/*音声をロード*/
 	slap = LoadSoundMem("音楽/slap1.mp3");
-	bgm = LoadSoundMem("音楽/bgm.mp3");
+	bgm = LoadSoundMem("音楽/BGM/bgm.mp3");
+	boss_bgm = LoadSoundMem("音楽/BGM/bossBGM.mp3");
 	down = LoadSoundMem("音楽/down1.mp3");
-	boss_bgm = LoadSoundMem("音楽/bossBGM.mp3");
 	main = LoadSoundMem("音楽/main.mp3");
 	startSound = LoadSoundMem("音楽/start.mp3");
 	levelUP = LoadSoundMem("音楽/レベルアップ.mp3");
+	report = LoadSoundMem("音楽/レポート.mp3");
 
 	return 0;
 }
@@ -156,7 +158,7 @@ void charaSet(pokemon* me) {
 		sprintf_s(s, 256, "画像/%s/%s%s2.png", me->name,me->name, dir[i]);
 		me->moveTexture[i][1] = LoadGraph(s);
 	}
-	sprintf_s(s, 256, "音楽/%svoice.mp3",me->name);
+	sprintf_s(s, 256, "音楽/voice/%svoice.mp3",me->name);
 	me->level = 1;
 	me->Max_ex = 80;
 	me->experience = 0;

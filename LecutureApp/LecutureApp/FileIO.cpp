@@ -11,6 +11,8 @@
 #define CHARBUFF 256
 #define BUFFSIZE 1024
 
+int ba;
+
 void getCurrentDirectory(char*);
 void setPoke(pokemon*);
 int saveData();
@@ -52,6 +54,21 @@ void setPoke(pokemon* me) {
 	else {
 		fprintf(stdout, "%s doesn't contain [%s] %s\n", pokeFile, section, keyWord);
 	}
+	sprintf_s(keyWord, CHARBUFF, "ba");
+	if (GetPrivateProfileString(section, keyWord, "none", keyValue, CHARBUFF, pokeFile) != 0) {
+		me->baseAttack = atoi(keyValue);
+	}
+	else {
+		fprintf(stdout, "%s doesn't contain [%s] %s\n", pokeFile, section, keyWord);
+	}
+	ba = me->baseAttack;
+	sprintf_s(keyWord, CHARBUFF, "type");
+	if (GetPrivateProfileString(section, keyWord, "none", keyValue, CHARBUFF, pokeFile) != 0) {
+		me->type = atoi(keyValue);
+	}
+	else {
+		fprintf(stdout, "%s doesn't contain [%s] %s\n", pokeFile, section, keyWord);
+	}
 
 	//わざの名前設定
 	for (int i = 1; i <= 4; i++) {
@@ -66,7 +83,6 @@ void setPoke(pokemon* me) {
 
 	//わざの値設定
 	for (int i = 0; i < 4; i++) {
-		//sprintf_s(section,CHARBUFF, "%s", me->skill[i].name);
 		strcpy_s(section, CHARBUFF, me->skill[i].name);
 		sprintf_s(keyWord,CHARBUFF, "max");
 		if (GetPrivateProfileString(section, keyWord, "none", keyValue, CHARBUFF, skillFile) != 0) {
@@ -90,6 +106,13 @@ void setPoke(pokemon* me) {
 			fprintf(stdout, "%s doesn't contain [%s] %s\n", pokeFile, section, keyWord);
 		}
 		me->skill[i].count = me->skill[i].maxCount;
+		sprintf_s(keyWord, CHARBUFF, "type");
+		if (GetPrivateProfileString(section, keyWord, "none", keyValue, CHARBUFF, skillFile) != 0) {
+			me->skill[i].type = atoi(keyValue);
+		}
+		else {
+			fprintf(stdout, "%s doesn't contain [%s] %s\n", pokeFile, section, keyWord);
+		}
 	}
 }
 
@@ -126,13 +149,13 @@ int saveData() {
 		return -1;
 	else {
 		char ss[BUFFSIZE];
-		sprintf_s(ss, "名前,最大体力,体力,わざカウント1,2,3,4,セットわざ,レベル,経験値,MAX経験値,x,y,direction,階数,m->x,m->y\n");
+		sprintf_s(ss, "名前,最大体力,体力,基礎攻撃力,わざカウント1,2,3,4,セットわざ,レベル,経験値,MAX経験値,x,y,direction,階数,m->x,m->y\n");
 		fputs(ss, fp);
 		int isLive = 0;
 		int name = 0;
 		if (c->name == MAINCHARANAME2)name = 1;
 		else if (c->name == MAINCHARANAME3)name = 2;
-		sprintf_s(ss, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",name,c->maxHp,c->hp,c->skill[0].count,c->skill[1].count, c->skill[2].count, c->skill[3].count,c->attackNum,c->level,c->experience,c->Max_ex,c->x,c->y,c->direction,m->floor,m->x,m->y);
+		sprintf_s(ss, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",name,c->maxHp,c->hp,c->baseAttack,c->skill[0].count,c->skill[1].count, c->skill[2].count, c->skill[3].count,c->attackNum,c->level,c->experience,c->Max_ex,c->x,c->y,c->direction,m->floor,m->x,m->y);
 		fputs(ss, fp);
 		sprintf_s(ss, "isLive,体力,わざカウント1,2,3,4,x,y,direction\n");
 		fputs(ss, fp);
@@ -228,6 +251,7 @@ int readData() {
 				charaSet(c);
 				c->maxHp = atoi(strtok_s(NULL, delim, &ctx));
 				c->hp = atoi(strtok_s(NULL, delim, &ctx));
+				c->baseAttack = atoi(strtok_s(NULL, delim, &ctx));
 				c->skill[0].count = atoi(strtok_s(NULL, delim, &ctx));
 				c->skill[1].count = atoi(strtok_s(NULL, delim, &ctx));
 				c->skill[2].count = atoi(strtok_s(NULL, delim, &ctx));
@@ -259,7 +283,7 @@ int readData() {
 
 				charaSet(e);
 				if (!atoi(p1))e->isLive = false;
-				e->hp = atoi(strtok_s(NULL, delim, &ctx));;
+				e->hp = atoi(strtok_s(NULL, delim, &ctx));
 				e->skill[0].count = atoi(strtok_s(NULL, delim, &ctx));
 				e->skill[1].count = atoi(strtok_s(NULL, delim, &ctx));
 				e->skill[2].count = atoi(strtok_s(NULL, delim, &ctx));

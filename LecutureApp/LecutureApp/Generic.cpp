@@ -5,6 +5,46 @@
 #include "allVariableName.h"
 #include "Message.h"
 
+
+#define NORMAL 0
+#define FIRE 1
+#define WATER 2
+#define ELECTRIC 3
+#define GLASS 4
+#define ICE 5
+#define FIGHT 6
+#define POISON 7
+#define GROUND 8
+#define FLIGHT 9
+#define ESPER 10
+#define INSECT 11
+#define ROCK 12
+#define GHOST 13
+#define DRAGON 14
+#define EVIL 15
+#define STEEL 16
+
+double skillTable[17][17] = {
+	//ノ	//ほの	//みず	//でん	//くさ	//こお	//かく	//どく　//じめ	//ひこ	//エス	//むし	//いわ	//ゴー	//ドラ	//あく	//はがね
+	{1,		1,		1,		1,		1,		1,		1,		1,		1,		1,		1,		1,		0.5,	0,		1,		1,		0.5},	//ノーマル
+	{1,		0.5,	0.5,	1,		2,		2,		1,		1,		1,		1,		1,		2,		0.5,	1,		0.5,	1,		2},		//ほのお
+	{1,		2,		0.5,	1,		0.5,	1,		1,		1,		2,		1,		1,		1,		2,		1,		0.5,	1,		1},		//みず
+	{1,		1,		2,		0.5,	0.5,	1,		1,		1,		0,		2,		1,		1,		1,		1,		0.5,	1,		1},		//でんき
+	{1,		0.5,	2,		1,		0.5,	1,		1,		0.5,	2,		0.5,	1,		0.5,	2,		1,		0.5,	1,		0.5},	//草
+	{1,		0.5,	0.5,	1,		2,		0.5,	1,		1,		2,		2,		1,		1,		1,		1,		2,		1,		0.5},	//こおり
+	{2,		1,		1,		1,		1,		2,		1,		0.5,	1,		0.5,	0.5,	0.5,	2,		0,		1,		2,		2},		//かくとう
+	{1,		1,		1,		1,		2,		1,		1,		0.5,	0.5,	1,		1,		1,		0.5,	0.5,	1,		1,		0},		//どく
+	{1,		2,		1,		2,		0.5,	1,		1,		2,		1,		0,		1,		0.5,	2,		1,		1,		1,		2},		//じめん
+	{1,		1,		1,		0.5,	2,		1,		2,		1,		1,		1,		1,		2,		0.5,	1,		1,		1,		0.5},	//ひこう
+	{1,		1,		1,		1,		1,		1,		2,		2,		1,		1,		0.5,	1,		1,		1,		1,		0,		0.5},	//エスパー
+	{1,		0.5,	1,		1,		2,		1,		0.5,	0.5,	1,		0.5,	2,		1,		1,		0.5,	1,		2,		1},		//むし
+	{1,		2,		1,		1,		1,		2,		0.5,	1,		0.5,	2,		1,		2,		1,		1,		1,		1,		0.5},	//いわ
+	{0,		1,		1,		1,		1,		1,		1,		1,		1,		1,		2,		1,		1,		2,		1,		0.5,	1},		//ゴースト
+	{1,		1,		1,		1,		1,		1,		1,		1,		1,		1,		1,		1,		1,		1,		2,		1,		0.5},	//ドラゴン
+	{1,		1,		1,		1,		1,		1,		0.5,	1,		1,		1,		2,		1,		1,		2,		1,		0.5,	1},		//あく
+	{1,		0.5,	0.5,	0.5,	1,		2,		1,		1,		1,		1,		1,		1,		2,		1,		1,		1,		0.5}	//はがね
+};
+
 char keyState[256];
 
 int miniMapFlag[FLOORNUM][MAP_YNUM][MAP_XNUM];
@@ -17,6 +57,7 @@ void wait(int ms);
 int getRandom(int min, int max);
 bool isPutMoveKey();
 void levelUp(int level);
+double skillCalc(int, int);
 
 void wait_key(int key) {
 	while (getCountFrame() == 0) {
@@ -28,15 +69,10 @@ void wait_key(int key) {
 
 //技威力設定
 void levelUp(int level) {
+	
+	
 
-	c->skill[0].min = 2 + level * 2;
-	c->skill[0].max = 4 + level * 2;
-	c->skill[1].min = 5 + level * 2;
-	c->skill[1].max = 8 + level * 2;
-	c->skill[2].min = 8 + level * 2;
-	c->skill[2].max = 14 + level * 2;
-	c->skill[3].min = 1 + level * 2;
-	c->skill[3].max = 3 + level * 2;
+	c->baseAttack = ba + level;
 	
 	for (int i = 0; i < 4; i++) {
 		c->skill[i].count = c->skill[i].maxCount;
@@ -135,4 +171,6 @@ bool life(pokemon* enemy, pokemon* me) {
 	return FALSE;
 }
 
-
+double skillCalc(int skillType, int enemyType) {
+	return skillTable[skillType][enemyType];
+}

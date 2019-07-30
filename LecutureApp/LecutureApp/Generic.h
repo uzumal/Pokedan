@@ -10,4 +10,4 @@ extern int getRandom(int min, int max);
 extern bool isPutMoveKey();
 extern void levelUp(int level);
 extern bool life(pokemon*, pokemon*);
-extern void charaInit();
+extern double skillCalc(int, int);

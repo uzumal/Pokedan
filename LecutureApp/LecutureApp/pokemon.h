@@ -12,9 +12,9 @@ struct pokemon {
 	int maxHp = 0;				//レベル増加による体力最大値の変化に対応(させる予定)
 	int hp = 0;					//体力
 	int speed = 0;				//速さ
-	char* type;					//タイプ
-	int attackNum = 0;
-
+	int type;					//タイプ
+	int attackNum = 0;			//現在選んでいる技の種類
+	int baseAttack = 0;			//基礎攻撃力
 	int moveTexture[4][2];		//入力ファイルからinitファイルに書き出し、使用する予定
 	
 	int voice = 0;				//鳴き声のファイル取得用(initファイルから読み込み予定)

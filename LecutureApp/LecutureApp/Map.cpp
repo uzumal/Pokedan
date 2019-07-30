@@ -45,7 +45,7 @@ void stairsMove(int stairs) {
 			if (c->y > MAP_HEIGHT / 2 ) { c->y -= CHIP_SIZE; m->y--; }
 
 		}
-		c->direction = UP;
+		setDirection(c, DOWN);
 		c->y += CHIP_SIZE * 3;
 		lastboss->x = c->x;
 		lastboss->y = c->y - CHIP_SIZE*3;

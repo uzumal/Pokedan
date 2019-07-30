@@ -15,6 +15,7 @@ extern int click;
 extern int boss_bgm;
 extern int startSound;
 extern int levelUP;
+extern int report;
 
 /*画像ファイルメモリ用配列*/
 extern int skillBox;			//わざメニュー
@@ -45,7 +46,7 @@ extern pokemon* z[3];
 extern maps* m;									//マップ構造体ポインタ
 
 extern int recovery;						//歩いて回復するかどうか
-
+extern int ba;
 
 /*ミニマップ表示フラグ*/
 extern int miniMapFlag[FLOORNUM][MAP_YNUM][MAP_XNUM];
