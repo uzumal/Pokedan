@@ -23,6 +23,8 @@ bool jump = false;			//ジャンプしているかどうか
 
 bool isReturn = false;
 
+int recorvery = 0;
+
 pokemon poke;
 pokemon* c = &poke;
 pokemon poke1;
@@ -47,6 +49,10 @@ void setDirection(pokemon* me, int direction) {
 /*動く処理*/
 void charaMove(pokemon* me, int x, int y) {
 
+	//動くたびに回復
+	if (recorvery == 0 && c->hp < c->maxHp)c->hp++;
+
+	if (recorvery > 0)recorvery--;
 
 	//マップ移動用
 	int mx = 0;
@@ -125,6 +131,7 @@ void attack(pokemon* me, pokemon* enemy) {
 		if (enemy->isLive && isNearPokemon(me, enemy) && ((me->y == enemy->y && ((me->x > enemy->x && me->direction == LEFT) || (me->x < enemy->x && me->direction == RIGHT))) || (me->x == enemy->x && ((me->y > enemy->y && me->direction == UP || me->y<enemy->y && me->direction == DOWN))))) {
 			/*2%の確率で攻撃が外れる*/
 			if (getRandom(1, 100) < 98) {
+				recorvery = RECOVERYTURN;	//敵の攻撃が当たった場合も任意のターン回復不可
 				enemy->hp -= value;
 				if (enemy->hp < 0)enemy->hp = 0;//hpがマイナスになるのを防ぐ
 				sprintf_s(s, "%sの%s! %sに%dのダメージ!%sのHP:%d", me->name, me->skill[me->attackNum].name, enemy->name, value, enemy->name, enemy->hp);
@@ -278,6 +285,9 @@ pokemon* getFrontEnemy() {
 void mainCharaMove() {
 	/*Attack*/
 	if (!menuflag && keyState[KEY_INPUT_J] == 1) {
+
+		//攻撃した場合任意のターン回復不可
+		recorvery = RECOVERYTURN;
 
 		pokemon* tmp = getFrontEnemy();
 		if (tmp != NULL)attack(c, tmp);

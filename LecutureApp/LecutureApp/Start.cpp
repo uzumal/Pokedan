@@ -278,13 +278,13 @@ void gameStart() {
 
 void setMainChara(int e) {
 	if (e == 1) {
-		c->name = "ƒsƒJƒ`ƒ…ƒE";
+		c->name = MAINCHARANAME1;
 	}
 	else if (e == 2) {
-		c->name = "ƒqƒmƒAƒ‰ƒV";
+		c->name = MAINCHARANAME2;
 	}
 	else if (e == 3) {
-		c->name = "ƒ[ƒjƒKƒ";
+		c->name = MAINCHARANAME3;
 	}
 	charaSet(c);
 }

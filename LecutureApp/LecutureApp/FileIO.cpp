@@ -130,8 +130,8 @@ int saveData() {
 		fputs(ss, fp);
 		int isLive = 0;
 		int name = 0;
-		if (c->name == "ƒqƒmƒAƒ‰ƒV")name = 1;
-		else if (c->name == "ƒ[ƒjƒKƒ")name = 2;
+		if (c->name == MAINCHARANAME2)name = 1;
+		else if (c->name == MAINCHARANAME3)name = 2;
 		sprintf_s(ss, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",name,c->maxHp,c->hp,c->skill[0].count,c->skill[1].count, c->skill[2].count, c->skill[3].count,c->attackNum,c->level,c->experience,c->Max_ex,c->x,c->y,c->direction,m->floor,m->x,m->y);
 		fputs(ss, fp);
 		for (int i = 0; i < FLOORNUM - 1; i++) {
@@ -211,13 +211,13 @@ int readData() {
 			if (count == 1) {
 				switch (atoi(p1)) {
 				case 0:
-					c->name = "ƒsƒJƒ`ƒ…ƒE";
+					c->name = MAINCHARANAME1;
 					break;
 				case 1:
-					c->name = "ƒqƒmƒAƒ‰ƒV";
+					c->name = MAINCHARANAME2;
 					break;
 				case 2:
-					c->name = "ƒ[ƒjƒKƒ";
+					c->name = MAINCHARANAME3;
 					break;
 				default:
 					break;
@@ -298,6 +298,7 @@ int readData() {
 			y++;
 			if (y == 50) { fl++; y = 0; }
 		}
+		fclose(fp2);
 	}
 
 	return 0;

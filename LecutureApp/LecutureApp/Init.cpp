@@ -47,9 +47,9 @@ int init() {
 
 	m->floor = 0;
 
-	nameSet(z[0], "ピカチュウ");
-	nameSet(z[1], "ヒノアラシ");
-	nameSet(z[2],"ゼニガメ");
+	nameSet(z[0], MAINCHARANAME1);
+	nameSet(z[1], MAINCHARANAME2);
+	nameSet(z[2],MAINCHARANAME3);
 	
 
 	for (int i = 0; i < 3; i++) {

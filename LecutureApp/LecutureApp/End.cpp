@@ -56,6 +56,7 @@ void gameClear() {
 		DrawFormatString(SCREEN_WIDTH/2-100, SCREEN_HEIGHT/2, WHITE, "%s", clear);
 		DrawFormatString(270, 470, RED, "%s", h);
 		DrawFormatString(300, 520, BLUE, "%s", s);
+		DrawGraph(SCREEN_WIDTH/2,SCREEN_HEIGHT/2 + 40,c->moveTexture[DOWN][0],true);
 		if (keyState[KEY_INPUT_A] == 1) { isReturn = false; endflag = true; break; }
 		if (keyState[KEY_INPUT_B] == 1) { break; }
 	}

@@ -55,18 +55,19 @@ void stairsMove(int stairs) {
 
 void mapMove(maps* m, pokemon* me, int x, int y) {
 
-	int nextCell = mapping[m->floor][me->y / CHIP_SIZE - m->y - y][me->x / CHIP_SIZE - m->x - x];
+	int nextCell = mapping[m->floor][SY(me) - y][SX(me) - x];
 
 	//ˆÚ“®ˆ—‚Æˆø‚ÁŠ|‚©‚èˆ—
 	if (nextCell > 0 && !keyState[KEY_INPUT_Y]) {
 		if (m->floor != 2) {
 			for (int i = 0; i < ENEMYNUM; i++) {
-				int nextEnemyCell = mapping[m->floor][enemy[m->floor][i]->y / CHIP_SIZE - m->y - y][enemy[m->floor][i]->x / CHIP_SIZE - m->x - x];
+				int nextEnemyCell = mapping[m->floor][SY(enemy[m->floor][i]) - y][SX(enemy[m->floor][i]) - x];
 				if (nextEnemyCell <= 0)charaMoveEnemy(enemy[m->floor][i], x, y);
 			}
 		}
 		else {
-			int nextEnemyCell = mapping[m->floor][lastboss->y / CHIP_SIZE - m->y - y][lastboss->x / CHIP_SIZE - m->x - x];
+			//ƒ}ƒbƒvˆÚ“®Œã‚ÌŽ©•ª‚ÌƒZƒ‹‚ªáŠQ•¨‚È‚ç
+			int nextEnemyCell = mapping[m->floor][SY(lastboss) - y][SX(lastboss) - x];
 			if (nextEnemyCell <= 0)charaMoveEnemy(lastboss, x, y);
 		}
 		m->x += x;

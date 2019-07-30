@@ -46,6 +46,12 @@
 #define ENEMYNAME6	"スイクン"
 #define BOSSNAME	"ミュウツー"
 
+#define MAINCHARANAME1 "ピカチュウ"
+#define MAINCHARANAME2 "ヒノアラシ"
+#define MAINCHARANAME3 "ゼニガメ"
+
+#define RECOVERYTURN 5
+
 #define ENEMYNUM 3
 #define PI 3.141592654
 

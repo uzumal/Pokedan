@@ -44,6 +44,9 @@ extern pokemon* c;								//ポケモン主人公ポインタ
 extern pokemon* z[3];
 extern maps* m;									//マップ構造体ポインタ
 
+extern int recovery;						//歩いて回復するかどうか
+
+
 /*ミニマップ表示フラグ*/
 extern int miniMapFlag[FLOORNUM][MAP_YNUM][MAP_XNUM];
 
@@ -52,8 +55,7 @@ extern char keyState[256];						//押されているキーを格納する配列
 
 extern bool messageflag;						//メッセージを表示するか
 
-extern bool menuflag;
-
-extern bool endflag; 
-extern bool continueflag;
-extern bool isReturn;
+extern bool menuflag;							//メニューを表示するか
+extern bool endflag;							//終わりかどうか
+extern bool continueflag;						//続きからかどうか
+extern bool isReturn;							//タイトルに戻るかどうか
