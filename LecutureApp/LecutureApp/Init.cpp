@@ -119,6 +119,8 @@ void charaInit() {
 	}
 	else {
 		charaSet(c);
+		//主人公は経験値0から始める
+		c->experience = 0;
 		/*初期座標位置*/
 		c->x = CHIP_SIZE * 3;
 		c->y = CHIP_SIZE * 3;
@@ -128,12 +130,11 @@ void charaInit() {
 			}
 		}
 		charaSet(lastboss);
-	}
-
-	for (int i = 0; i < FLOORNUM; i++) {
-		for (int j = 0; j < MAP_YNUM; j++) {
-			for (int k = 0; k < MAP_XNUM; k++) {
-				miniMapFlag[i][j][k] = 0;
+		for (int i = 0; i < FLOORNUM; i++) {
+			for (int j = 0; j < MAP_YNUM; j++) {
+				for (int k = 0; k < MAP_XNUM; k++) {
+					miniMapFlag[i][j][k] = 0;
+				}
 			}
 		}
 	}

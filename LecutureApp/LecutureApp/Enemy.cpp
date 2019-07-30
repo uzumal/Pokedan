@@ -372,7 +372,8 @@ void randomEnemyPut(pokemon* e[ENEMYNUM]) {
 			if (mapping[m->floor][SY(e[i])][SX(e[i])] > 0) {
 				//”í‚è‚ð–³‚­‚·
 				for (int j = 0; j < i; j++) {
-					if ((SX(e[i]) == SX(e[j]) && SY(e[i]) == SY(e[j])) || (SX(e[i]) == GX && SY(e[i]) == GY))flag = false;
+					//“G“¯Žm‚Ì”í‚èA‚Ü‚½Ž©•ª‚ÌŽü‚è‚ÉoŒ»‚·‚é‚Ì‚ð–h‚®
+					if ((SX(e[i]) == SX(e[j]) && SY(e[i]) == SY(e[j])) || (SX(e[i]) <= GX + 1 && SX(e[i]) >= GX - 1 && SY(e[i]) >= GY - 1 && SY(e[i]) <= GY + 1))flag = false;
 				}
 				if (flag)break;
 			}

@@ -20,7 +20,7 @@ void prologue() {
 
 	FILE *fp;
 	errno_t error;
-
+	//フアイルが開ける=ファイルが存在する
 	error = fopen_s(&fp, "saveData.txt", "r");
 
 	while (keyState[KEY_INPUT_A] == 0 && ScreenFlip() == 0 && getCountFrame() == 0 && ClearDrawScreen() == 0) {

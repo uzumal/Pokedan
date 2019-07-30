@@ -111,14 +111,16 @@ int saveData() {
 
 
 	FILE* fp;
+	FILE* fp2;
 
 	int maxMonth = 0;
 	int minMonth = 0;
 	int maxDay = 0;
 	int minDay = 0;
 
-	errno_t error;
+	errno_t error,error2;
 	error = fopen_s(&fp, "saveData.txt", "w");
+
 
 	if (error != 0)
 		return -1;
@@ -148,14 +150,38 @@ int saveData() {
 		fputs(ss, fp);
 
 		fclose(fp);
-		return 0;
 	}
+
+	error2 = fopen_s(&fp2, "miniMapData.txt","w");
+	if (error2 != 0) {
+		return -1;
+	}
+	else {
+		char ss[BUFFSIZE];
+		for (int i = 0; i < FLOORNUM; i++) {
+			for (int j = 0; j < MAP_YNUM; j++) {
+				for (int k = 0; k < MAP_XNUM; k++) {
+					if (k < MAP_XNUM-1) {
+						sprintf_s(ss, "%d,", miniMapFlag[i][j][k]);
+						fputs(ss, fp2);
+					}
+					else {
+						sprintf_s(ss, "%d\n", miniMapFlag[i][j][k]);
+						fputs(ss, fp2);
+					}
+				}
+			}
+		}
+		fclose(fp2);
+	}
+	return 0;
 }
 
 
 int readData() {
 
 	FILE* fp;			//ファイル用変数
+	FILE* fp2;
 	char ss[BUFFSIZE];
 
 	//コンマ区切り
@@ -166,7 +192,7 @@ int readData() {
 
 	char* fileName = "saveData.txt";
 
-	errno_t error;
+	errno_t error,error2;
 	error = fopen_s(&fp, fileName, "r");
 
 	int count = 0;
@@ -244,6 +270,35 @@ int readData() {
 		}
 
 		fclose(fp);
-		return 0;
 	}
+	error2 = fopen_s(&fp2, "miniMapData.txt", "r");
+	if (error2 != 0) {
+		return -1;
+	}
+	else {
+
+		int count = 0;
+
+		int tmpMiniMap[MAP_XNUM];
+
+		int fl = 0;
+		int y = 0;
+
+		while (fgets(ss, BUFFSIZE, fp2) != NULL) {
+			count = 0;
+			p1 = strtok_s(ss, delim, &ctx);
+			while (p1 != NULL) {
+				tmpMiniMap[count] = atoi(p1);
+				count++;
+				p1 = strtok_s(NULL, delim, &ctx);
+			}
+			for (int i = 0; i < MAP_XNUM; i++) {
+				miniMapFlag[fl][y][i] = tmpMiniMap[i];
+			}
+			y++;
+			if (y == 50) { fl++; y = 0; }
+		}
+	}
+
+	return 0;
 }
