@@ -6,6 +6,7 @@
 #include "Generic.h"
 #include "Message.h"
 #include "mapping.h"
+#include "FileIO.h"
 
 #define GX (c->x/CHIP_SIZE - m->x)
 #define GY (c->y/CHIP_SIZE - m->y)
@@ -146,7 +147,6 @@ void attack(pokemon* me, pokemon* enemy) {
 	messageflag = true;
 	setMessage(s);
 	outMessage();
-
 }
 
 //敵が周りにおらず攻撃が必ず外れる場合
@@ -291,6 +291,17 @@ void mainCharaMove() {
 			if (life(lastboss, c) == FALSE) {
 				enemyMove(lastboss);
 			}
+		}
+	}
+	if (!menuflag && keyState[KEY_INPUT_K] == 1) {
+		if (saveData() == -1) { 
+			setMessage("セーブに失敗しました");
+			outMessage();
+		}
+		else{
+			wait(100);
+			setMessage("セーブに成功しました");
+			outMessage();
 		}
 	}
 	/*Right*/

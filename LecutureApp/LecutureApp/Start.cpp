@@ -7,20 +7,17 @@
 
 void prologue();
 void setMainChara(int);
+void gameStart();
 
+bool continueflag = false;
 
 void prologue() {
 	int select = LoadSoundMem("音楽/select.mp3");
 	int f_num = 0;
 	PlaySoundMem(main, DX_PLAYTYPE_LOOP);
-	char logo[256] = "<Press A Botton>";
-	char tmpString[256];
+	char logo[256] = "はじめから";
+	char logo2[256] = "つづきから";
 
-	for (int i = 0; i < 256; i++) {
-		tmpString[i] = '\0';
-	}
-
-	int e = 0;
 	while (keyState[KEY_INPUT_A] == 0 && ScreenFlip() == 0 && getCountFrame() == 0 && ClearDrawScreen() == 0) {
 		DrawRotaGraph(400, 250, 1.0, 0, title[0], false);
 		DrawRotaGraph(400, 250, 1.5, 0, title[1], true);
@@ -28,7 +25,14 @@ void prologue() {
 		SetFontThickness(8);                         //太さを8に変更
 		ChangeFont("HGS創英角ﾎﾟｯﾌﾟ体");              //HGS創英角ﾎﾟｯﾌﾟ体に変更
 		ChangeFontType(DX_FONTTYPE_ANTIALIASING_EDGE);//アンチエイリアス＆エッジ付きフォントに変更
-		DrawFormatString(230, 420, GetColor(255, 0, 0), "%s", logo);
+		if (!continueflag && keyState[KEY_INPUT_RIGHT] == 1) { continueflag = true; PlaySoundMem(select, DX_PLAYTYPE_BACK); }
+		if (continueflag && keyState[KEY_INPUT_LEFT] == 1) { continueflag = false; PlaySoundMem(select, DX_PLAYTYPE_BACK); }
+
+		if (!continueflag)DrawFormatString(170, 450, WHITE, "◇");
+		if (continueflag)DrawFormatString(390, 450, WHITE, "◇");
+
+		DrawFormatString(160, 420, RED, "%s", logo);
+		DrawFormatString(360, 420, BLUE, "%s", logo2);
 		/*1500ms(1.5秒)に一度画像更新*/
 		if (GetNowCount() - tempTime > 1500)
 		{
@@ -43,12 +47,24 @@ void prologue() {
 			}
 			tempTime = GetNowCount();
 		}
-
 	}
-	/*音を止める*/
 	StopSoundMem(main);
+	if (!continueflag)gameStart();
+}
 
-	PlaySoundMem(start, DX_PLAYTYPE_LOOP);
+
+void gameStart() {
+	int select = LoadSoundMem("音楽/select.mp3");
+	/*音を止める*/
+
+	char tmpString[256];
+	for (int i = 0; i < 256; i++) {
+		tmpString[i] = '\0';
+	}
+
+	int e = 0;
+
+	PlaySoundMem(startSound, DX_PLAYTYPE_LOOP);
 	ChangeFont("游ゴシック　Light");              //変更
 	SetFontSize(20);                             //サイズを64に変更
 	SetFontThickness(4);                         //太さを8に変更
@@ -67,17 +83,17 @@ void prologue() {
 	bool flag[3] = { false,false,false };
 	bool opFlag = true;
 	while (opFlag && getCountFrame() == 0 && ScreenFlip() == 0 && ProcessMessage() == 0) {
-		
+
 		initMessage();
 		sprintf_s(tmpString, 256, "では初めにプレイするポケモンを選んでもらおう");
 		setMessage(tmpString);
 		outMessage();
-		
+
 
 		if (flag[0]) {
 			PlaySoundMem(select, DX_PLAYTYPE_BACK);
 			e = 1;
-			PlaySoundMem(z[e-1]->voice, DX_PLAYTYPE_BACK);
+			PlaySoundMem(z[e - 1]->voice, DX_PLAYTYPE_BACK);
 			DrawString(390, 150, "◇", RED);
 			DrawRotaGraph(400, 300, 0.5, 0, bl, true);
 			while (ScreenFlip() == 0 && getCountFrame() == 0 && !keyState[KEY_INPUT_LEFT] && !keyState[KEY_INPUT_RIGHT] && !keyState[KEY_INPUT_A]) {
@@ -95,7 +111,7 @@ void prologue() {
 				}
 
 				DrawRotaGraph(400, 100, 3.0, angle, ball[0], true);
-				
+
 				/*500ms(0.5秒)に一度画像更新*/
 				if (GetNowCount() - tempTime > 500)
 				{
@@ -110,7 +126,7 @@ void prologue() {
 			e_num = 0;
 			count = 0;
 			DrawRotaGraph(400, 100, 3.0, 0, ball[0], true);
-			DrawRotaGraph(400, 170, 0.2,0,bl, true);
+			DrawRotaGraph(400, 170, 0.2, 0, bl, true);
 		}
 
 		if (flag[1]) {
@@ -122,12 +138,12 @@ void prologue() {
 			while (ScreenFlip() == 0 && getCountFrame() == 0 && !keyState[KEY_INPUT_UP] && !keyState[KEY_INPUT_RIGHT] && !keyState[KEY_INPUT_A]) {
 
 				if (GetNowCount() - tempTime > 500)
-				{	
+				{
 					switch (count % 4) {
 					case 0:angle = 0; break;
 					case 1:angle = PI / 4; break;
 					case 2:angle = 0; break;
-					case 3:angle = -PI/4; break;
+					case 3:angle = -PI / 4; break;
 					}
 					count++;
 					if (count == 4)count = 0;
@@ -184,7 +200,7 @@ void prologue() {
 			e_num = 0;
 			count = 0;
 			DrawRotaGraph(600, 350, 3.0, 0, ball[0], true);
-			DrawRotaGraph(600, 420, 0.2,0, bl, true);
+			DrawRotaGraph(600, 420, 0.2, 0, bl, true);
 		}
 
 
@@ -205,12 +221,12 @@ void prologue() {
 		}
 		if ((flag[0] || flag[1] || flag[2]) && keyState[KEY_INPUT_A]) {
 			PlaySoundMem(select, DX_PLAYTYPE_BACK);
-			sprintf_s(tmpString, "%sでいいかな?",z[e-1]->name);
+			sprintf_s(tmpString, "%sでいいかな?", z[e - 1]->name);
 			setMessage(tmpString);
 			setMessage("YES→Y");
 			setMessage("NO→N");
 			messageflag = true;
-			while (getCountFrame()==0 && ScreenFlip()==0 && ProcessMessage() == 0) {
+			while (getCountFrame() == 0 && ScreenFlip() == 0 && ProcessMessage() == 0) {
 				outMessage();
 				if (keyState[KEY_INPUT_Y]) {
 					flag[0] = false;
@@ -221,7 +237,7 @@ void prologue() {
 					initMessage();
 					break;
 				}
-				if(keyState[KEY_INPUT_N]){
+				if (keyState[KEY_INPUT_N]) {
 					flag[0] = false;
 					flag[1] = false;
 					flag[2] = false;
@@ -236,9 +252,9 @@ void prologue() {
 	messageflag = false;
 	initMessage();
 	SetFontSize(18);
-	StopSoundMem(start);
-}
+	StopSoundMem(startSound);
 
+}
 
 void setMainChara(int e) {
 	if (e == 1) {

@@ -29,9 +29,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		SetFontSize(16);
 		SetFontThickness(4);
 
-		over = false;
-		clear = false;
-		story = false;
 		ClearDrawScreen();
 		/*bgm再生開始*/
 		PlaySoundMem(bgm, DX_PLAYTYPE_LOOP);
@@ -40,11 +37,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			allView(d_num);
 			wait(10);
 		}
-
-		talk(c, "「ここは...?」");
-		initMessage();
-		drawExplain();
+		if (!continueflag) {
+			talk(c, "「ここは...?」");
+			initMessage();
+			drawExplain();
+		}
+		over = false;
+		clear = false;
+		story = false;
 		messageflag = false;
+		continueflag = false;
 		/*描画する*/
 		// while(裏画面を表画面に反映, メッセージ処理, 画面クリア,フレームカウント)
 		while (ScreenFlip() == 0 && ProcessMessage() == 0 && ClearDrawScreen() == 0 && getCountFrame() == 0 && m->floor != 2) {
@@ -82,7 +84,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			/*spaceキーで終わり*/
 			if (keyState[KEY_INPUT_SPACE] == 1) { endflag = true; break; }
-			if (keyState[KEY_INPUT_DOWN] == 1) { stairsMove(1); }
 
 		}
 		if (m->floor == 2) {

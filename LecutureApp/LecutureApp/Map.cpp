@@ -29,21 +29,25 @@ void stairsMove(int stairs) {
 		
 	}
 	else {
+		//BGM止める
 		StopSoundMem(bgm);
+		//ボス戦BGM
+		PlaySoundMem(boss_bgm,DX_PLAYTYPE_LOOP);
 		sprintf_s(s, "はじまりのダンジョン\n       最終階");
-		wait(2000, s);
+		wait(4000, s);
 
 		while (c->x != SCREEN_WIDTH / 2 || c->y != MAP_HEIGHT / 2) {
 
 			if (c->x < SCREEN_WIDTH / 2) { c->x += CHIP_SIZE; m->x++; }
 			if (c->x > SCREEN_WIDTH / 2) { c->x -= CHIP_SIZE; m->x--; }
-			if (c->y < MAP_HEIGHT / 2) { c->y += CHIP_SIZE; m->y++; }
-			if (c->y > MAP_HEIGHT / 2) { c->y -= CHIP_SIZE; m->y--; }
+			if (c->y < MAP_HEIGHT / 2 ) { c->y += CHIP_SIZE; m->y++; }
+			if (c->y > MAP_HEIGHT / 2 ) { c->y -= CHIP_SIZE; m->y--; }
 
 		}
-
+		c->direction = UP;
+		c->y += CHIP_SIZE * 3;
 		lastboss->x = c->x;
-		lastboss->y = c->y;
+		lastboss->y = c->y - CHIP_SIZE*3;
 		
 	}
 }

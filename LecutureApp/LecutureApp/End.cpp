@@ -8,6 +8,8 @@ bool startflag = false;
 
 void gameover() {
 	StopSoundMem(bgm);
+	StopSoundMem(boss_bgm);
+	int overSound = LoadSoundMem("音楽/over.mp3");
 	char h[256];
 	sprintf_s(s, "プレイヤーは死んでしまった!");
 	initMessage();
@@ -15,6 +17,7 @@ void gameover() {
 	setMessage(s);
 	outMessage();
 	ScreenFlip();
+	PlaySoundMem(overSound, DX_PLAYTYPE_NORMAL);
 	wait_key(KEY_INPUT_A);
 	sprintf_s(h, "ゲームを終了する:A");
 	sprintf_s(s, "リトライする:B");
@@ -32,7 +35,8 @@ void gameover() {
 }
 
 void gameClear() {
-	StopSoundMem(bgm);
+	StopSoundMem(boss_bgm);
+	int clearSound = LoadSoundMem("音楽/clear.mp3");
 	char h[256];
 	char clear[256];
 	sprintf_s(s, "ダンジョンを制覇した!!!");
@@ -45,6 +49,7 @@ void gameClear() {
 	sprintf_s(h, "ゲームを終了する:A");
 	sprintf_s(s, "リトライする:B");
 	sprintf_s(clear, "GameClear!!!");
+	PlaySoundMem(clearSound, DX_PLAYTYPE_NORMAL);
 	while (ScreenFlip() == 0 && ClearDrawScreen() == 0 && getCountFrame() == 0) {
 		SetFontSize(26);                             //サイズを26に変更
 		SetFontThickness(8);                         //太さを8に変更

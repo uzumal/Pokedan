@@ -11,8 +11,10 @@ extern int slap;
 extern int bgm;
 extern int down;
 extern int main;
-extern int start;
 extern int click;
+extern int boss_bgm;
+extern int startSound;
+extern int levelUP;
 
 /*画像ファイルメモリ用配列*/
 extern int skillBox;			//わざメニュー
@@ -53,4 +55,4 @@ extern bool messageflag;						//メッセージを表示するか
 extern bool menuflag;
 
 extern bool endflag; 
-extern bool story;
+extern bool continueflag;

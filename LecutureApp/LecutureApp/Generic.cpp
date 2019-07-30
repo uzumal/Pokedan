@@ -105,7 +105,6 @@ bool isPutMoveKey() {
 
 //“G‚ªŽ€‚ñ‚Å‚¢‚é‚©”»’è
 bool life(pokemon* enemy, pokemon* me) {
-
 	int ex = 0;
 	/*¶‚«‚Ä‚¢‚é‚©Ž€‚ñ‚Å‚¢‚é‚©*/
 	/*Ž€–SŠm”F*/
@@ -122,10 +121,11 @@ bool life(pokemon* enemy, pokemon* me) {
 			enemy->experience = enemy->experience - me->Max_ex;
 			me->level++;
 			me->Max_ex += 30;
+			PlaySoundMem(levelUP, DX_PLAYTYPE_NORMAL);
 			sprintf_s(s, "%s‚ÍƒŒƒxƒ‹%d‚É‚È‚Á‚½I", me->name, me->level);
 			setMessage(s);
 			outMessage();
-			wait(400);
+			wait(100);
 			levelUp(me->level);
 
 		}

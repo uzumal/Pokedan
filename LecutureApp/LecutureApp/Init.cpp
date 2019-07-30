@@ -3,15 +3,17 @@
 #include "Generic.h"
 #include "Enemy.h"
 #include "FileIO.h"
-
+#include "Message.h"
 
 /*音声ファイルメモリ用配列*/
 int slap;
 int bgm;
 int down;
 int main;
-int start;
 int click;
+int boss_bgm;
+int startSound;
+int levelUP;
 
 /*画像ファイルメモリ用配列*/
 int skillBox;
@@ -76,25 +78,42 @@ int init() {
 	/*わざ選択ボックス*/
 	skillBox = LoadGraph("画像/skillBox.png");
 
-	/*音声をロード*/
-	slap = LoadSoundMem("音楽/slap1.mp3");
-	bgm = LoadSoundMem("音楽/bgm.mp3");
-	down = LoadSoundMem("音楽/down1.mp3");
-
 	load  = LoadGraph("画像/load.png");
 	load2 = LoadGraph("画像/load2.png");
 	load3 = LoadGraph("画像/load3.png");
 
+	/*音声をロード*/
+	slap = LoadSoundMem("音楽/slap1.mp3");
+	bgm = LoadSoundMem("音楽/bgm.mp3");
+	down = LoadSoundMem("音楽/down1.mp3");
+	boss_bgm = LoadSoundMem("音楽/bossBGM.mp3");
 	main = LoadSoundMem("音楽/main.mp3");
-	start = LoadSoundMem("音楽/start.mp3");
+	startSound = LoadSoundMem("音楽/start.mp3");
+	levelUP = LoadSoundMem("音楽/レベルアップ.mp3");
 
 	return 0;
 }
 
 void charaInit() {
 	
-	charaSet(c);
+	/*マップ初期化*/
+	m->floor = 0;
+	m->x = 0;
+	m->y = 0;
 
+	if (continueflag) {
+		if (readData() == -1) {
+			setMessage("データを読み込めませんでした");
+			outMessage();
+			ScreenFlip();
+		}
+	}
+	else {
+		charaSet(c);
+		/*初期座標位置*/
+		c->x = CHIP_SIZE * 3;
+		c->y = CHIP_SIZE * 3;
+	}
 
 	enemy[0][0]->name = "フシギダネ";
 	enemy[0][1]->name = "ディグダ";
@@ -113,11 +132,6 @@ void charaInit() {
 
 	charaSet(lastboss);
 
-	/*マップ初期化*/
-	m->floor = 0;
-	m->x = 0;
-	m->y = 0;
-
 	for (int i = 0; i < FLOORNUM; i++) {
 		for (int j = 0; j < MAP_YNUM; j++) {
 			for (int k = 0; k < MAP_XNUM; k++) {
@@ -126,9 +140,6 @@ void charaInit() {
 		}
 	}
 
-	/*初期座標位置*/
-	c->x = CHIP_SIZE * 3;
-	c->y = CHIP_SIZE * 3;
 
 	randomEnemyPut(enemy[m->floor]);
 
