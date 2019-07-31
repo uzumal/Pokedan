@@ -103,7 +103,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			wait(10);
 			talk(lastboss, "さあ、私を倒してみろ");
 			wait(10);
-			talk(c, "誰やねん...");
+			ClearDrawScreen();
+			allView(d_num);
+			talk(c, "ラスボス早いな...");
 			
 		}
 

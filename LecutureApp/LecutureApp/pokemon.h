@@ -18,7 +18,8 @@ struct pokemon {
 	int moveTexture[4][2];		//画像を保持する
 	
 	int voice = 0;				//鳴き声のファイル取得用(initファイルから読み込み予定)
-	
+	int talk = 0;				//話すときの画像ファイル
+
 	skill skill[4];
 
 	int direction = DOWN;		//向いている方向,初期値はDOWN

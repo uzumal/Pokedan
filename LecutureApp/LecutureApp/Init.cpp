@@ -159,10 +159,12 @@ void charaSet(pokemon* me) {
 		me->moveTexture[i][1] = LoadGraph(s);
 	}
 	sprintf_s(s, 256, "‰¹Šy/voice/%svoice.mp3",me->name);
+	me->voice = LoadSoundMem(s);
+	sprintf_s(s, 256, "‰æ‘œ/%s/%stalk.png", me->name,me->name);
+	me->talk = LoadGraph(s);
 	me->level = 1;
 	me->Max_ex = 80;
 	me->experience = 0;
-	me->voice = LoadSoundMem(s);
 	setPoke(me);
 	me->direction = DOWN;
 	me->isLive = true;

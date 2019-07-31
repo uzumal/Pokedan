@@ -1,6 +1,7 @@
 #pragma once
 #include "allVariableName.h"
 #include "Generic.h"
+#include "View.h"
 
 char message1[256];
 char message2[256];
@@ -113,6 +114,7 @@ void talk(pokemon* me,char s[]) {
 	DrawFormatString(100, 487, RED, "%s", message1);
 	ScreenFlip();
 	for (int k = 0; s[k] != '\0'; k++) {
+		DrawRotaGraph(700, 400, 3, 0, me->talk, true);		//自分の姿
 		PlaySoundMem(sound, DX_PLAYTYPE_BACK);
 		tmpSt[k] = s[k];
 		//setMessageを使用するとエラーが起きたので手動で入れる
