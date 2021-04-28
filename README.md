@@ -14,5 +14,5 @@ Pokedan
 ![third_movie](https://user-images.githubusercontent.com/52265875/110310199-9a9cd400-8045-11eb-9518-702e1d1cdc21.gif)
 
 ## Author
-[Kazuma Takeuchi](https://github.com/kazuma1027)\
+[Kazuma Takeuchi](https://github.com/uzumal)\
 [Ryota](https://github.com/ryota050505)
