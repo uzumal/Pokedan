@@ -348,4 +348,5 @@ MigrationBackup
 .DS_Store
 
 # Reomve html
-LectureApp/DxLib_VC3_20f/DxLib_VC/help/
+LectureApp/DxLib_VC3_20f/DxLib_VC/help
+*.html
