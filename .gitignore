@@ -343,3 +343,10 @@ healthchecksdb
 
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
 MigrationBackup
+
+# For Mac
+.DS_Store
+
+# Reomve html
+LectureApp/DxLib_VC3_20f/DxLib_VC/help
+*.html
